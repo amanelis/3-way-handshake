@@ -192,21 +192,13 @@ void layer2 (struct eth_hdr *ethhead, int size) {
 
 int main (int argc, char *argv[]) {
 	char pktbuff[20000];
-	struct pcap_file_header fheader;
+	//struct pcap_file_header fheader;
 	struct my_pkthdr pheader;
 	int fd, bytes, i;
 	long long sstart = 0, ustart = 0, timesec = 0, timeusec = 0;
 
-	int n, count, fd[2];
-	char buf[4096];
-
 	if(argc !=2){
 		fprintf(stderr, "USAGE: ./executable [log file]\n");
-		return(-1);
-	}
-
-	if(pipe(fd)){
-		fprintf(stderr, "ERROR: on pipe(fd[2])\n");
 		return(-1);
 	}
 
@@ -243,26 +235,6 @@ int main (int argc, char *argv[]) {
 			return(-1);
 		}
 		layer2((struct eth_hdr *) &pktbuff, bytes);
-		
-		count = 0;
-		switch(count = fork()) {
-			case -1:
-				fprintf(stderr, "ERROR: on child fork()\n");
-				return(-1);
-			case 0:
-				close(fd[0]);
-				dup2(fd[1], STDOUT_FILENO);
-				close(fd[1]);
-
-				execlp("/usr/local/bin/bittwiste", "bittwiste", "-I packets/arp-packet.pcap -O packets/fake-arp.pcap -T arp -o 2 -s 00:00:aa:bb:cc:dd -p 192.168.1.1 -t 00:08:55:64:65:6a -q 192.168.1.20", null);
-				fprintf(stderr, "ERROR: on execlp\n");
-				return(-1);
-			default:
-				n = read(fd[0], buf, sizeof(char *));
-				write(STDOUT_FILENO, buf, n);
-				printf("\n");
-		}
-		
 		i++;
 	}
 
