@@ -20,3 +20,8 @@ Dependencies -
 INSTALL & RUNNING -
 $>make
 $>./lparse [network log file]
+
+In the logs/ dir, I have included some TCP dump files you can
+demo your executables on. I would try:
+
+$>./lparse ./logs/network.log
