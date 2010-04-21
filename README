@@ -30,4 +30,5 @@ $>./lparse ./logs/network.log
 PACKETS DIR
 This directory was used to generate packets using the program
 bit-twist. As for my packet manipulation that is the next library
-I will be including in this application. 
+I will be including in this application.
+ 
