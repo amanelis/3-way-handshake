@@ -1,0 +1,18 @@
+C TCP Dump Log Analyzer
+Written by Alex Manelis
+
+parse.c - 
+This was the original attempt at trying to read the packets
+and information. Its implementation is not as effective as 
+wanted considering I am doing multiple reads. This is why 
+the second implementation is the real working one. 
+
+parse_lab.c -
+This file correctly reads the data and stores to a buffer.
+Working on implementing a packet manipulation function that
+will then send out manipulated packets on network.
+
+Dependencies -
+1.) ldnet
+2.) lpcap
+3.) tcpdump, w/ dump files 
