@@ -16,6 +16,7 @@ Dependencies -
 1.) ldnet
 2.) lpcap
 3.) tcpdump, w/ dump file
+4.) bit-twist (not implemented yet, in future)
 
 INSTALL & RUNNING -
 $>make
@@ -25,3 +26,8 @@ In the logs/ dir, I have included some TCP dump files you can
 demo your executables on. I would try:
 
 $>./lparse ./logs/network.log
+
+PACKETS DIR
+This directory was used to generate packets using the program
+bit-twist. As for my packet manipulation that is the next library
+I will be including in this application. 
