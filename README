@@ -15,4 +15,8 @@ will then send out manipulated packets on network.
 Dependencies -
 1.) ldnet
 2.) lpcap
-3.) tcpdump, w/ dump files 
+3.) tcpdump, w/ dump file
+
+INSTALL & RUNNING -
+$>make
+$>./lparse [network log file]
