@@ -1,5 +1,5 @@
 C TCP Dump Log Analyzer
-Written by Alex Manelis
+Written by Alex Manelis <amanelis@gmail.com>
 
 parse.c - 
 This was the original attempt at trying to read the packets
