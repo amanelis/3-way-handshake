@@ -1,0 +1,8 @@
+#Ignore my executables
+proxy
+pparse
+lparse
+oparse
+
+#Do not ignore .gitignore file
+!.gitignore
