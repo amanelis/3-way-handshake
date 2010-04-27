@@ -16,5 +16,8 @@ myprox: proxy.c parse_lab.c
 proxy: proxy.c
 	$(CC) $(CFLAGS) proxy.c -o proxy $(LIBS)
 
+driver: driver.c
+	$(CC) $(CFLAGS) driver.c -o driver $(LIBS)
+
 clean:
 	rm -f *.o ./oparse ./lparse ./pparse ./proxy
