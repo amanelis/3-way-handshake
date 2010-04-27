@@ -1,4 +1,6 @@
-void retrans(u_char *user, struct pcap_pkthdr *h, u_char *pack ); 
+//void retrans(u_char *user, struct pcap_pkthdr *h, u_char *pack ); 
+//void retrans(struct pcap_pkthdr *h, u_char *pack ); 
+void retrans(struct my_pkthdr *h, u_char *pack ); 
 void setfilter();
 void rmnl(char *s);
 void rmslash(char *s);

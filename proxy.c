@@ -99,7 +99,9 @@ int main(int argc, char *argv[]) {
 //  addresses should be other client.  Then set both ip and tcp
 //  checksums (both done by ip_checksum()).
 
-void retrans(u_char *user, struct pcap_pkthdr *h, u_char *pack ) {
+//void retrans(u_char *user, struct pcap_pkthdr *h, u_char *pack ) {
+//void retrans(struct pcap_pkthdr *h, u_char *pack ) {
+void retrans(struct my_pkthdr *h, u_char *pack ) {
   struct eth_hdr *ethhdr;
   struct ip_hdr *iphdr;
   struct addr srcad, srcha;
@@ -129,8 +131,11 @@ void retrans(u_char *user, struct pcap_pkthdr *h, u_char *pack ) {
   ip_checksum((void *)iphdr, ntohs(iphdr->ip_len));
   // Send packet
   n = eth_send(e,pack,h->len);
-  if ( n != h->len ) 
+  if ( n != h->len ) { 
     fprintf(stderr,"Partial packet transmission %d/%d\n",n,h->len);
+  } else {
+    fprintf(stdout, "Packet Transmission Successfull %d %d\n", n, h->len);
+  }
 }
 
 // Set the bpf filter to only accept tcp packets from the clients

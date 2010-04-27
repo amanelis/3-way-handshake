@@ -11,8 +11,8 @@
 
 #include <dnet.h>
 #include <pcap.h>
-
 #include "proxy.h"
+
 
 struct timev {
 	unsigned int tv_sec;
@@ -24,6 +24,7 @@ struct my_pkthdr {
 	int caplen;
 	int len;
 };
+
 
 void layer4 (char *layer4p, uint8_t type) {
 	struct tcp_hdr *tcph;
@@ -200,8 +201,8 @@ int main (int argc, char *argv[]) {
 	int fd, bytes, i;
 	long long sstart = 0, ustart = 0, timesec = 0, timeusec = 0;
 
-	if(argc !=2){
-		fprintf(stderr, "USAGE: ./executable [log file]\n");
+	if(argc !=3){
+		fprintf(stderr, "USAGE: ./executable [log file] [config file]\n");
 		return(-1);
 	}
 
@@ -215,10 +216,11 @@ int main (int argc, char *argv[]) {
 		return(-1);
 	}
 
-        readcfg(argv[1]);
+        readcfg(argv[2]);
+	printf("config file opend\n");
 	open_devices();
 
-	/*
+
 	i = 0;
 	while((bytes = read(fd, &pheader, 16)) == 16){
 		if(i == 0){
@@ -242,10 +244,13 @@ int main (int argc, char *argv[]) {
 			fprintf(stdout, "%d\n", pheader.caplen);
 			return(-1);
 		}
+		
+
+		retrans(&pheader, pktbuff);
+
 		layer2((struct eth_hdr *) &pktbuff, bytes);
 		i++;
 	}
-	*/
 
 
 	return(0);
