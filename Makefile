@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -g
 LIBS = -ldnet -lpcap
 
-all: mypar mylab myprox
+all: mylab myprox
 
 mypar: parse.c
 	$(CC) $(CFLAGS) parse.c -o oparse $(LIBS)
@@ -10,8 +10,11 @@ mypar: parse.c
 mylab: parse_lab.c
 	$(CC) $(CFLAGS) parse_lab.c -o lparse $(LIBS)
 
-myprox: parse_lab.c proxy.c
-	$(CC) $(CFLAGS) parse_lab.c proxy.c -o pparse $(LIBS)
+myprox: proxy.c parse_lab.c
+	$(CC) $(CFLAGS) proxy.c parse_lab.c -o pparse $(LIBS)
+
+proxy: proxy.c
+	$(CC) $(CFLAGS) proxy.c -o proxy $(LIBS)
 
 clean:
-	rm -f *.o ./lparse ./oparse ./pparse
+	rm -f *.o ./oparse ./lparse ./pparse ./proxy

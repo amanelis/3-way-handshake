@@ -213,6 +213,8 @@ int main (int argc, char *argv[]) {
 		return(-1);
 	}
 
+	open_devices();
+
 	i = 0;
 	while((bytes = read(fd, &pheader, 16)) == 16){
 		if(i == 0){
