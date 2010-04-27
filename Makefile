@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -g
 LIBS = -ldnet -lpcap
 
-all: mypar mylab
+all: mypar mylab myprox
 
 mypar: parse.c
 	$(CC) $(CFLAGS) parse.c -o oparse $(LIBS)
