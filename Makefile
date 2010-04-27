@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -g
 LIBS = -ldnet -lpcap
 
-all: mylab myprox
+all: driver
 
 mypar: parse.c
 	$(CC) $(CFLAGS) parse.c -o oparse $(LIBS)
@@ -20,4 +20,4 @@ driver: driver.c
 	$(CC) $(CFLAGS) driver.c -o driver $(LIBS)
 
 clean:
-	rm -f *.o ./oparse ./lparse ./pparse ./proxy
+	rm -f *.o ./oparse ./lparse ./pparse ./proxy ./driver
