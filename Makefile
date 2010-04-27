@@ -11,5 +11,4 @@ mylab: parse_lab.c
 	$(CC) $(CFLAGS) parse_lab.c -o lparse $(LIBS)
 
 clean:
-	rm ./lparse
-	rm ./oparse
+	rm -f *.o ./lparse ./oparse
