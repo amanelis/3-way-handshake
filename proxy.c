@@ -72,7 +72,7 @@ uint32_t localnet, netmask;
 
 
 
-
+/*
 int main(int argc, char *argv[]) {
 
   if ( argc == 2 ) {
@@ -92,6 +92,8 @@ int main(int argc, char *argv[]) {
   }
   return(0);
 }
+*/
+
 
 //  Get source address from the current packet, determine whether
 //  it is from the client or the server (client1 or client2) and
