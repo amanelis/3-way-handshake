@@ -1,6 +1,11 @@
 C TCP Dump Log Analyzer
 Written by Alex Manelis <amanelis@gmail.com>
 
+Description:
+This project reads in a TCP dump file. It analyzes it, and 
+sorts throught types of packets. Using this it can take this
+data to create a three way handshake with a victim machine.
+
 parse.c - 
 This was the original attempt at trying to read the packets
 and information. Its implementation is not as effective as 
