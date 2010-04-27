@@ -3,6 +3,7 @@ proxy
 pparse
 lparse
 oparse
+driver
 
 #Do not ignore .gitignore file
 !.gitignore
