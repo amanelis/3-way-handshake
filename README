@@ -10,7 +10,13 @@ the second implementation is the real working one.
 parse_lab.c -
 This file correctly reads the data and stores to a buffer.
 Working on implementing a packet manipulation function that
-will then send out manipulated packets on network.
+will then send out manipulated packets on network. Does not
+properly resend packets to make three way hand shake.
+
+driver.c -
+This file properly sends packets to network. Working on 
+confirming the three way handshake
+
 
 Dependencies -
 1.) ldnet
@@ -19,13 +25,13 @@ Dependencies -
 4.) bit-twist (not implemented yet, in future)
 
 INSTALL & RUNNING -
-$>make
-$>./lparse [network log file]
+$>make driver
+$>./driver [network log file] [config file]
 
 In the logs/ dir, I have included some TCP dump files you can
 demo your executables on. I would try:
 
-$>./lparse ./logs/network.log
+$>./driver logs/syn.64.log logs/cfg.alex
 
 PACKETS DIR
 This directory was used to generate packets using the program
