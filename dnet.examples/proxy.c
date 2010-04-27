@@ -71,6 +71,8 @@ uint32_t localnet, netmask;
 //
 
 
+
+
 int main(int argc, char *argv[]) {
 
   if ( argc == 2 ) {
@@ -198,18 +200,16 @@ void readcfg(char *filename) {
 void open_devices(void) {
 
     i = intf_open();
-
     if ( i == NULL ) {
       perror("intf open error");
       exit(-1);
     }
-    
     strncpy(ie.intf_name, iface, 60);
     if ( intf_get(i, &ie) == -1 ) {
       perror("intf get error");
       exit(-1);
     }
-    
+
     // Set my mac address structure
     mha = ie.intf_link_addr;
     if ( addr_ntop(&mha, mhw, 32) == NULL )

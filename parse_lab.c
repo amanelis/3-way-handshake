@@ -11,6 +11,7 @@
 
 #include <dnet.h>
 #include <pcap.h>
+#include "proxy.h"
 
 struct timev {
 	unsigned int tv_sec;
@@ -198,6 +199,9 @@ int main (int argc, char *argv[]) {
 	int fd, bytes, i;
 	long long sstart = 0, ustart = 0, timesec = 0, timeusec = 0;
 
+
+	open_devices();
+
 	if(argc !=2){
 		fprintf(stderr, "USAGE: ./executable [log file]\n");
 		return(-1);
@@ -226,6 +230,9 @@ int main (int argc, char *argv[]) {
 					timesec--;
 				}
 		}
+
+		readcfg(argv[1]);
+		open_devices();	
 
 		printf("\nPacket %d\n%05lld.%06lld\nCaptured Packet Length = %d\n",i,timesec,timeusec,pheader.caplen);
 		printf("Actual Packet Length = %d\n", pheader.len);
