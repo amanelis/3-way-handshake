@@ -153,6 +153,9 @@ void retrans(struct my_pkthdr *h, u_char *pack ) {
 // Set the bpf filter to only accept tcp packets from the clients
 // to this machine.
 void setfilter() {
+  //sprint(filter, " 
+	
+  /*
   char cmd[128];
   if ( pcap_lookupnet(iface, &localnet, &netmask, ebuf) < 0 ) {
     fprintf(stderr,"pcap_lookupnet: %s\n", ebuf);
@@ -168,6 +171,7 @@ void setfilter() {
     fprintf(stderr,"pcap_setfilter: %s\n", pcap_geterr(p));
     exit(-1);
   }
+  */
 }
 // Replace newline with null character
 void rmnl(char *s) {
@@ -201,6 +205,8 @@ void readcfg(char *filename) {
   /* Get server addresses */
   if ( (err = load_address(fp,sip,shw,&sad,&sha)) < 0 )
     load_error(err,"Server");
+
+
 
   if ( fgets(iface, sizeof(iface), fp) == NULL ) {
     fprintf(stderr, "Interface too large\n");
@@ -263,7 +269,7 @@ void usage(void) {
     exit(-1);
 }
 // Read in two ascii addresses and convert them to addr structure form
-int load_address(FILE *fp, char *ip, char *hw,struct addr *ad, struct addr *ha) {
+int load_address(FILE *fp, char *ip, char *hw, struct addr *ad, struct addr *ha) {
   /* Get ip address */
   if ( fgets(ip, 32, fp) == NULL ) 
     return(-1);
@@ -485,16 +491,21 @@ int main (int argc, char *argv[]) {
 	}
 
 	printf("TCP Dump analysis by Alex Manelis\n");
-	printf("*********************************\n");
+	fprintf(stdout, "*********************************\n");
 
         readcfg(argv[2]);
-	printf("Configuration file opened properly\n");
+	fprintf(stdout, "Configuration file opened properly\n");
 	
 	open_devices();
-	printf("Devices properly opened\n");
+	fprintf(stdout, "Devices properly opened\n");
+	
+	setfilter();
+	fprintf(stdout, "Filters have been compiled\n");
 
 	struct eth_hdr *ethin;
 	struct pcap_pkthdr h;
+	
+	ethin = malloc(sizeof(struct eth_hdr));
 
 	i = 0;
 	while((bytes = read(fd, &pheader, 16)) == 16){
@@ -521,14 +532,15 @@ int main (int argc, char *argv[]) {
 		}
 		
 		retrans(&pheader, pktbuff);
-
-		r = 0;
-		while((r = pcap_next_ex(p, &h, (const u_char **)&ethin))<0){
-			printf("Reading packet: %s\n", pcap_geterr(p));
-		}
 					
 		layer2((struct eth_hdr *) &pktbuff, bytes);
 		i++;
 	}
+        
+	r = 0;
+	while((r = pcap_next_ex(p, &h, (const u_char **)&ethin))<0){
+		printf("@@@@@@@@ Reading packet: %s\n", pcap_geterr(p));
+        }
+
 	return(0);
 }
