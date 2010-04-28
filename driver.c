@@ -485,7 +485,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	printf("TCP Dump analysis by Alex Manelis\n");
-	printf("*********************************");
+	printf("*********************************\n");
 
         readcfg(argv[2]);
 	printf("Configuration file opened properly\n");
@@ -493,13 +493,8 @@ int main (int argc, char *argv[]) {
 	open_devices();
 	printf("Devices properly opened\n");
 
-	/*
 	struct eth_hdr *ethin;
-	struct pcap_header h;
-	
-	h = malloc(sizeof(struct pcap_header));
-	ethin = malloc(sizeof(struct eth_hdr));
-	*/
+	struct pcap_pkthdr h;
 
 	i = 0;
 	while((bytes = read(fd, &pheader, 16)) == 16){
@@ -509,10 +504,10 @@ int main (int argc, char *argv[]) {
 		} else {
 			timeusec = pheader.ts.tv_usec-ustart;
 			timesec = pheader.ts.tv_sec-sstart;
-				if (timeusec < 0){
-					timeusec += 1000000;
-					timesec--;
-				}
+			if (timeusec < 0){
+				timeusec += 1000000;
+				timesec--;
+			}
 		}
 
 
@@ -527,14 +522,11 @@ int main (int argc, char *argv[]) {
 		
 		retrans(&pheader, pktbuff);
 
-		/*
 		r = 0;
-		while(r = pcap_next_ex(p, &h, (const u_char **)&ethin))<0){
-			printf("Reading packet: %s\n", pcap_geterr(p);
+		while((r = pcap_next_ex(p, &h, (const u_char **)&ethin))<0){
+			printf("Reading packet: %s\n", pcap_geterr(p));
 		}
-		*/
-
-
+					
 		layer2((struct eth_hdr *) &pktbuff, bytes);
 		i++;
 	}
