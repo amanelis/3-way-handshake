@@ -37,7 +37,6 @@ char sip[32], shw[32];       // server ascii ip and mac addresses
 char mip[32], mhw[32];       // my ascii ip and mac addresses
 
 char iface[32];
-
 char buf[2048];
 char ebuf[2048];
 
@@ -246,7 +245,8 @@ void open_devices(void) {
       exit(-1);
     }
 
-    p = pcap_open_live(iface, -1, 1, 1000, ebuf);
+    //p = pcap_open_live(iface, -1, 1, 1000, ebuf);
+    p = pcap_open_live(iface, 20000, 1, 500, ebuf);
     if ( p == NULL ) {
       perror(ebuf);
       exit(-1);
@@ -463,10 +463,10 @@ void layer2 (struct eth_hdr *ethhead, int size) {
 }
 
 int main (int argc, char *argv[]) {
-	char pktbuff[20000];
 	//struct pcap_file_header fheader;
+	char pktbuff[20000];
 	struct my_pkthdr pheader;
-	int fd, bytes, i;
+	int fd, bytes, i, r;
 	long long sstart = 0, ustart = 0, timesec = 0, timeusec = 0;
 
 	if(argc !=3){
@@ -484,10 +484,17 @@ int main (int argc, char *argv[]) {
 		return(-1);
 	}
 
-        readcfg(argv[2]);
-	printf("config file opend\n");
-	open_devices();
+	printf("TCP Dump analysis by Alex Manelis\n");
+	printf("*********************************");
 
+        readcfg(argv[2]);
+	printf("Configuration file opened properly\n");
+	
+	open_devices();
+	printf("Devices properly opened\n");
+
+	//struct eth_hdr *ethin;
+	//struct pcap_header h;
 
 	i = 0;
 	while((bytes = read(fd, &pheader, 16)) == 16){
@@ -513,13 +520,18 @@ int main (int argc, char *argv[]) {
 			return(-1);
 		}
 		
-
 		retrans(&pheader, pktbuff);
+
+		/*
+		r = 0;
+		while(r = pcap_next_ex(p, &h, (const u_char **)&ethin))<0){
+			printf("Reading packet: %s\n", pcap_geterr(p);
+		}
+		*/
+
 
 		layer2((struct eth_hdr *) &pktbuff, bytes);
 		i++;
 	}
-
-
 	return(0);
 }
