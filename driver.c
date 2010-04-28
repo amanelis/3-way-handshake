@@ -493,8 +493,13 @@ int main (int argc, char *argv[]) {
 	open_devices();
 	printf("Devices properly opened\n");
 
-	//struct eth_hdr *ethin;
-	//struct pcap_header h;
+	/*
+	struct eth_hdr *ethin;
+	struct pcap_header h;
+	
+	h = malloc(sizeof(struct pcap_header));
+	ethin = malloc(sizeof(struct eth_hdr));
+	*/
 
 	i = 0;
 	while((bytes = read(fd, &pheader, 16)) == 16){
