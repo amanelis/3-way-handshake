@@ -50,6 +50,8 @@ struct intf_entry ie;
 struct bpf_program fcode;
 uint32_t localnet, netmask;
 
+pcap_t * packetfile;
+
 //  This is a simple implementation of a proxy machine.  Effectively
 //  this program makes the machine that it is running on a man-in-the-middle
 //  between two other machines.  Every packet sent to this machine from
@@ -71,16 +73,25 @@ uint32_t localnet, netmask;
 //
 //  This program uses a configuration file that has the following 
 //  information:
-//  <client1 ip>
-//  <client1 mac>
-//  <client2 ip>
-//  <client2 mac>
+//  <victim ip>
+//  <victim mac>
+//  <victim port>
+//
+//  <attacker ip>
+//  <attacker mac>
+//  <attacker port>
+//
+//  <replay victim ip>
+//  <replay victim mac>
+//
+//  <replay attacker ip>
+//  <replay attacker mac>
 //  <interface>
+//  <timing>
 //
 //  The program should be compiled with
 //
 //  gcc -Wall -g proxy.c -o proxy -lpcap -ldnet
-//
 
 /*
 int main(int argc, char *argv[]) {
@@ -153,9 +164,6 @@ void retrans(struct my_pkthdr *h, u_char *pack ) {
 // Set the bpf filter to only accept tcp packets from the clients
 // to this machine.
 void setfilter() {
-  //sprint(filter, " 
-	
-  /*
   char cmd[128];
   if ( pcap_lookupnet(iface, &localnet, &netmask, ebuf) < 0 ) {
     fprintf(stderr,"pcap_lookupnet: %s\n", ebuf);
@@ -171,7 +179,6 @@ void setfilter() {
     fprintf(stderr,"pcap_setfilter: %s\n", pcap_geterr(p));
     exit(-1);
   }
-  */
 }
 // Replace newline with null character
 void rmnl(char *s) {
@@ -198,15 +205,13 @@ void readcfg(char *filename) {
     exit(-1);
   }
 
-  /* Get client addresses */
+  /* Get client addresses, really victim */
   if ( (err = load_address(fp,cip,chw,&cad,&cha)) < 0 )
     load_error(err,"Client");
 
-  /* Get server addresses */
+  /* Get server addresses, really victim */
   if ( (err = load_address(fp,sip,shw,&sad,&sha)) < 0 )
     load_error(err,"Server");
-
-
 
   if ( fgets(iface, sizeof(iface), fp) == NULL ) {
     fprintf(stderr, "Interface too large\n");
@@ -468,10 +473,11 @@ void layer2 (struct eth_hdr *ethhead, int size) {
 	layer3(((char *)ethhead)+14,ntohs((*ethhead).eth_type));
 }
 
+
 int main (int argc, char *argv[]) {
 	//struct pcap_file_header fheader;
-	char pktbuff[20000];
 	struct my_pkthdr pheader;
+	char pktbuff[20000];
 	int fd, bytes, i, r;
 	long long sstart = 0, ustart = 0, timesec = 0, timeusec = 0;
 
@@ -536,11 +542,24 @@ int main (int argc, char *argv[]) {
 		layer2((struct eth_hdr *) &pktbuff, bytes);
 		i++;
 	}
-        
+      
 	r = 0;
-	while((r = pcap_next_ex(p, &h, (const u_char **)&ethin))<0){
+	while((r = pcap_next_ex(p, &h, (const u_char **)&ethin))){
+		switch(r){
+			case 0:
+				printf("@@@@@Packet return 0, live stream: %s\n", pcap_geterr(p));
+			case 1:
+				printf("@@@@@Packet return 1, packet read: %s\n", pcap_geterr(p));
+			case -1:
+				printf("@@@@@Packet return -1: timed out: %s\n", pcap_geterr(p));
+			case -2:
+				printf("@@@@@Packet return -2: from file: %s\n", pcap_geterr(p));
+			default:
+				printf("@@@@@Packet return NULL: %s\n", pcap_geterr(p));
+		}
+
 		printf("@@@@@@@@ Reading packet: %s\n", pcap_geterr(p));
         }
-
+	
 	return(0);
 }
