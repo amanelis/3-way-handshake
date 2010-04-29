@@ -106,6 +106,7 @@ pcap_t * packetfile;
 //
 //  <replay attacker ip>
 //  <replay attacker mac>
+//
 //  <interface>
 //  <timing>
 //
@@ -503,7 +504,23 @@ struct contents *readcfg1(char *filename) {
 		exit(-1);
 	}
 
-	/* Gets the victim IP, MAC, PORT */
+	
+	// Get client addresses, really victim 
+	if ( (err = load_address(input, cip, chw, &cad, &cha)) < 0 )
+		load_error(err,"Client");
+
+	// Get server addresses, really victim 
+	if ( (err = load_address(input, sip, shw, &sad, &sha)) < 0 )
+		load_error(err,"Server");
+
+	if ( fgets(iface, sizeof(iface), input) == NULL ) {
+		fprintf(stderr, "Interface too large\n");
+		exit(-1);
+	}
+	rmnl(iface);
+
+/*
+	// Gets the victim IP, MAC, PORT 
 	fgets(p->vicip, 32, input);
 	rmnl(p->vicip);
 
@@ -513,7 +530,7 @@ struct contents *readcfg1(char *filename) {
 	fgets(p->vicpt, 32, input);
 	rmnl(p->vicpt);
 
-	/* Gets the attacker IP, MAC, PORT */
+	// Gets the attacker IP, MAC, PORT 
 	fgets(p->attip, 32, input);
 	rmnl(p->attip);
 
@@ -523,14 +540,14 @@ struct contents *readcfg1(char *filename) {
 	fgets(p->attpt, 32, input);
 	rmnl(p->attpt);	
 
-	/* Gets the Replay victim IP, MAC */
+	// Gets the Replay victim IP, MAC 
 	fgets(p->repvicip, 32, input);
 	rmnl(p->repvicip);
 
 	fgets(p->repvicmc, 32, input);
 	rmnl(p->repvicmc);
 
-	/* Gets the Replay attacker IP, MAC */
+	// Gets the Replay attacker IP, MAC 
 	fgets(p->repattip, 32, input);
 	rmnl(p->repattip);
 
@@ -538,14 +555,15 @@ struct contents *readcfg1(char *filename) {
 	rmnl(p->repattmc);
 
 
-	/* Gets the interface */
+	// Gets the interface 
 	fgets(p->interface, 32, input);
 	rmnl(p->interface);
 
-	/* Gets the timing */
+	// Gets the timing 
 	fgets(p->timing, 32, input);
 	rmnl(p->timing);
-
+*/
+	fclose(input);
 	return p;
 }
 
@@ -554,9 +572,12 @@ struct contents *readcfg1(char *filename) {
 int main (int argc, char *argv[]) {
 	//struct pcap_file_header fheader;
 	struct my_pkthdr pheader;
+	struct contents *z;
 	char pktbuff[20000];
 	int fd, bytes, i, r;
 	long long sstart = 0, ustart = 0, timesec = 0, timeusec = 0;
+
+	z = malloc(sizeof(struct contents));
 
 	if(argc !=3){
 		fprintf(stderr, "USAGE: ./executable [log file] [config file]\n");
@@ -573,20 +594,12 @@ int main (int argc, char *argv[]) {
 		return(-1);
 	}
 	
-	struct contents *z;
-	z = malloc(sizeof(struct contents));
-
-	z = readcfg1(argv[2]);
-
-	printf("%s\n", z->vicip);
-	printf("%s\n", z->timing);
-
-
-	/*
+	
 	printf("TCP Dump analysis by Alex Manelis\n");
 	fprintf(stdout, "*********************************\n");
 
-        readcfg(argv[2]);
+        //readcfg(argv[2]);
+	z = readcfg1(argv[2]);	
 	fprintf(stdout, "Configuration file opened properly\n");
 	
 	open_devices();
@@ -633,8 +646,6 @@ int main (int argc, char *argv[]) {
 	        b = pcap_next_ex(p, &h, (const u_char **)&ethin);
 		printf("^^^^^^^^^pcap_next_ex: %d\n", b);
 	}
-
-	*/
 
 	return(0);
 }
