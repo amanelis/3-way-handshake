@@ -5,6 +5,7 @@ lparse
 oparse
 driver
 *.*~
+a.out
 
 #Do not ignore .gitignore file
 !.gitignore
