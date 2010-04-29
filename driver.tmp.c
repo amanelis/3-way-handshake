@@ -48,15 +48,20 @@ struct contents {
 char *cfile;
 
 struct addr ad;
+struct addr mad, mha;        		// my ip, mac
 struct addr vad, vha, vprt;        	// victim ip, mac
 struct addr aad, aha, aprt;        	// attacker ip, mac
-struct addr mad, mha;        		// my ip, mac
+struct addr revi_ip, revi_mac;		// replay victim ip, mac
+struct addr reat_ip, reat_mac;		// replay attacker ip, mac
 
+char mip[32], mhw[32];       		// my ip, mac
 char vip[32], vhw[32], vpt[32];       	// victim ip, mac
 char aip[32], ahw[32], apt[32];       	// attacker ip, mac
-char mip[32], mhw[32];       		// my ip, mac
+char rvip[32], rvmc[32];		// replay victim ip, mac
+char ratip[32], ratmac[32];		// replay attacker ip, mac
 
 char iface[32];
+char timing[32];
 char buf[2048];
 char ebuf[2048];
 
@@ -69,7 +74,6 @@ pcap_t *p;
 struct intf_entry ie;
 struct bpf_program fcode;
 uint32_t localnet, netmask;
-
 pcap_t *packetfile;
 
 //  This is a simple implementation of a proxy machine.  Effectively
@@ -313,9 +317,11 @@ int load_address(FILE *fp, char *ip, char *hw, char *pt, struct addr *ad, struct
   }
 
   /* Get port  */
-  if ( fgets(pt, 32, fp) == NULL ) 
-    return(-5);
-  rmnl(pt);
+  if(!((pt == vpt) || (pt == apt))) {
+     if ( fgets(pt, 32, fp) == NULL ) 
+       return(-5);
+     rmnl(pt);
+  }
   return(0);
 }
 
@@ -515,22 +521,38 @@ struct contents *readcfg1(char *filename) {
 		exit(-1);
 	}
 
-	
-	// Get client addresses, really victim 
+	// Get victim ip, mac, port
 	if ( (err = load_address(input, vip, vhw, vpt, &vad, &vha)) < 0 )
-		load_error(err,"Client");
+		load_error(err,"Original Victim");
 
-	// Get server addresses, really victim 
+	// Get attacker ip, mac, port
 	if ( (err = load_address(input, aip, ahw, apt, &aad, &aha)) < 0 )
-		load_error(err,"Server");
+		load_error(err,"Original Attacker");
 
+	// Get replay victim, ip, mac and then add original victim port
+	if ( (err = load_address(input, rvip, rvmc, vpt, &revi_ip, &revi_mac)) < 0 )
+		load_error(err,"Replay Victim");
+
+	// Get replay attacker, ip, mac and then add original attacker port
+	if ( (err = load_address(input, ratip, ratmac, apt, &reat_ip, &reat_mac)) < 0 )
+		load_error(err,"Replay Attacker");
+
+	// Get the interface
 	if ( fgets(iface, sizeof(iface), input) == NULL ) {
 		fprintf(stderr, "Interface too large\n");
 		exit(-1);
 	}
 	rmnl(iface);
 
-/*
+	// Get the timing
+	if ( fgets(timing, sizeof(timing), input) == NULL ) {
+		fprintf(stderr, "Timing in correct\n");
+		exit(-1);
+	}
+	rmnl(timing);
+
+
+	/*
 	// Gets the victim IP, MAC, PORT 
 	fgets(p->vicip, 32, input);
 	rmnl(p->vicip);
@@ -573,7 +595,8 @@ struct contents *readcfg1(char *filename) {
 	// Gets the timing 
 	fgets(p->timing, 32, input);
 	rmnl(p->timing);
-*/
+	*/
+
 	fclose(input);
 	return p;
 }
