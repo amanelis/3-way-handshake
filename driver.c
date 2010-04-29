@@ -493,7 +493,7 @@ void layer2 (struct eth_hdr *ethhead, int size) {
 	layer3(((char *)ethhead)+14,ntohs((*ethhead).eth_type));
 }
 
-struct contents *readcfg(char *filename) {
+struct contents *readcfg1(char *filename) {
 	FILE *input;
 	struct contents *p;
 	p = malloc(sizeof(struct contents));
@@ -572,7 +572,17 @@ int main (int argc, char *argv[]) {
 		fprintf(stderr, "ERROR: on bytes = read()\n");
 		return(-1);
 	}
+	
+	struct contents *z;
+	z = malloc(sizeof(struct contents));
 
+	z = readcfg1(argv[2]);
+
+	printf("%s\n", z->vicip);
+	printf("%s\n", z->timing);
+
+
+	/*
 	printf("TCP Dump analysis by Alex Manelis\n");
 	fprintf(stdout, "*********************************\n");
 
@@ -624,24 +634,7 @@ int main (int argc, char *argv[]) {
 		printf("^^^^^^^^^pcap_next_ex: %d\n", b);
 	}
 
-	/*
-	r = 0;
-	while((r = pcap_next_ex(p, &h, (const u_char **)&ethin))){
-		switch(r){
-			case 0:
-				printf("@@@@@Packet return 0, live stream: %s\n", pcap_geterr(p));
-			case 1:
-				printf("@@@@@Packet return 1, packet read: %s\n", pcap_geterr(p));
-			case -1:
-				printf("@@@@@Packet return -1: timed out: %s\n", pcap_geterr(p));
-			case -2:
-				printf("@@@@@Packet return -2: from file: %s\n", pcap_geterr(p));
-			default:
-				printf("@@@@@Packet return NULL: %s\n", pcap_geterr(p));
-		}
-
-		printf("@@@@@@@@ Reading packet: %s\n", pcap_geterr(p));
-        }
 	*/
+
 	return(0);
 }
