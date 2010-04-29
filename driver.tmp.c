@@ -67,7 +67,7 @@ char ebuf[2048];
 
 FILE *fp;
 int err;
-
+int swit;
 intf_t *i;
 eth_t *e;
 pcap_t *p;
@@ -300,7 +300,7 @@ void usage(void) {
 }
 
 // Read in two ascii addresses and convert them to addr structure form
-int load_address(FILE *fp, char *ip, char *hw, char *pt, struct addr *ad, struct addr *ha) {
+int load_address(FILE *fp, char *ip, char *hw, char *pt, struct addr *ad, struct addr *ha, int swit) {
   /* Get ip address */
   if ( fgets(ip, 32, fp) == NULL ) 
     return(-1);
@@ -317,7 +317,8 @@ int load_address(FILE *fp, char *ip, char *hw, char *pt, struct addr *ad, struct
   }
 
   /* Get port  */
-  if(!((pt == vpt) || (pt == apt))) {
+//  if(!((strcmp(pt, vpt)==0) || (strcmp(pt, apt)==0))) {
+  if(swit==1){
      if ( fgets(pt, 32, fp) == NULL ) 
        return(-5);
      rmnl(pt);
@@ -340,6 +341,97 @@ void load_error(int e, char *mach) {
   else
     fprintf(stderr, "Unknown error %d for %s\n", e, mach);
   exit(-1);
+}
+
+
+struct contents *readcfg1(char *filename) {
+	FILE *input;
+	struct contents *p;
+	p = malloc(sizeof(struct contents));
+	
+	if((input = fopen(filename, "r")) == NULL){
+		fprintf(stderr, "ERROR: fopen()\n");
+		exit(-1);
+	}
+
+	// Get victim ip, mac, port
+	if ( (err = load_address(input, vip, vhw, vpt, &vad, &vha,1)) < 0 )
+		load_error(err,"Original Victim");
+
+	// Get attacker ip, mac, port
+	if ( (err = load_address(input, aip, ahw, apt, &aad, &aha,1)) < 0 )
+		load_error(err,"Original Attacker");
+
+	// Get replay victim, ip, mac and then add original victim port
+	if ( (err = load_address(input, rvip, rvmc, vpt, &revi_ip, &revi_mac,0)) < 0 )
+		load_error(err,"Replay Victim");
+
+	// Get replay attacker, ip, mac and then add original attacker port
+	if ( (err = load_address(input, ratip, ratmac, apt, &reat_ip, &reat_mac,0)) < 0 )
+		load_error(err,"Replay Attacker");
+
+	// Get the interface
+	if ( fgets(iface, sizeof(iface), input) == NULL ) {
+		fprintf(stderr, "Interface too large\n");
+		exit(-1);
+	}
+	rmnl(iface);
+
+	// Get the timing
+	if ( fgets(timing, sizeof(timing), input) == NULL ) {
+		fprintf(stderr, "Timing in correct\n");
+		exit(-1);
+	}
+	rmnl(timing);
+
+
+	/*
+	// Gets the victim IP, MAC, PORT 
+	fgets(p->vicip, 32, input);
+	rmnl(p->vicip);
+
+	fgets(p->vicmc, 32, input);
+	rmnl(p->vicmc);
+
+	fgets(p->vicpt, 32, input);
+	rmnl(p->vicpt);
+
+	// Gets the attacker IP, MAC, PORT 
+	fgets(p->attip, 32, input);
+	rmnl(p->attip);
+
+	fgets(p->attmc, 32, input);
+	rmnl(p->attmc);
+
+	fgets(p->attpt, 32, input);
+	rmnl(p->attpt);	
+
+	// Gets the Replay victim IP, MAC 
+	fgets(p->repvicip, 32, input);
+	rmnl(p->repvicip);
+
+	fgets(p->repvicmc, 32, input);
+	rmnl(p->repvicmc);
+
+	// Gets the Replay attacker IP, MAC 
+	fgets(p->repattip, 32, input);
+	rmnl(p->repattip);
+
+	fgets(p->repattmc, 32, input);
+	rmnl(p->repattmc);
+
+
+	// Gets the interface 
+	fgets(p->interface, 32, input);
+	rmnl(p->interface);
+
+	// Gets the timing 
+	fgets(p->timing, 32, input);
+	rmnl(p->timing);
+	*/
+
+	fclose(input);
+	return p;
 }
 
 
@@ -511,97 +603,6 @@ void layer2 (struct eth_hdr *ethhead, int size) {
 	layer3(((char *)ethhead)+14,ntohs((*ethhead).eth_type));
 }
 
-struct contents *readcfg1(char *filename) {
-	FILE *input;
-	struct contents *p;
-	p = malloc(sizeof(struct contents));
-	
-	if((input = fopen(filename, "r")) == NULL){
-		fprintf(stderr, "ERROR: fopen()\n");
-		exit(-1);
-	}
-
-	// Get victim ip, mac, port
-	if ( (err = load_address(input, vip, vhw, vpt, &vad, &vha)) < 0 )
-		load_error(err,"Original Victim");
-
-	// Get attacker ip, mac, port
-	if ( (err = load_address(input, aip, ahw, apt, &aad, &aha)) < 0 )
-		load_error(err,"Original Attacker");
-
-	// Get replay victim, ip, mac and then add original victim port
-	if ( (err = load_address(input, rvip, rvmc, vpt, &revi_ip, &revi_mac)) < 0 )
-		load_error(err,"Replay Victim");
-
-	// Get replay attacker, ip, mac and then add original attacker port
-	if ( (err = load_address(input, ratip, ratmac, apt, &reat_ip, &reat_mac)) < 0 )
-		load_error(err,"Replay Attacker");
-
-	// Get the interface
-	if ( fgets(iface, sizeof(iface), input) == NULL ) {
-		fprintf(stderr, "Interface too large\n");
-		exit(-1);
-	}
-	rmnl(iface);
-
-	// Get the timing
-	if ( fgets(timing, sizeof(timing), input) == NULL ) {
-		fprintf(stderr, "Timing in correct\n");
-		exit(-1);
-	}
-	rmnl(timing);
-
-
-	/*
-	// Gets the victim IP, MAC, PORT 
-	fgets(p->vicip, 32, input);
-	rmnl(p->vicip);
-
-	fgets(p->vicmc, 32, input);
-	rmnl(p->vicmc);
-
-	fgets(p->vicpt, 32, input);
-	rmnl(p->vicpt);
-
-	// Gets the attacker IP, MAC, PORT 
-	fgets(p->attip, 32, input);
-	rmnl(p->attip);
-
-	fgets(p->attmc, 32, input);
-	rmnl(p->attmc);
-
-	fgets(p->attpt, 32, input);
-	rmnl(p->attpt);	
-
-	// Gets the Replay victim IP, MAC 
-	fgets(p->repvicip, 32, input);
-	rmnl(p->repvicip);
-
-	fgets(p->repvicmc, 32, input);
-	rmnl(p->repvicmc);
-
-	// Gets the Replay attacker IP, MAC 
-	fgets(p->repattip, 32, input);
-	rmnl(p->repattip);
-
-	fgets(p->repattmc, 32, input);
-	rmnl(p->repattmc);
-
-
-	// Gets the interface 
-	fgets(p->interface, 32, input);
-	rmnl(p->interface);
-
-	// Gets the timing 
-	fgets(p->timing, 32, input);
-	rmnl(p->timing);
-	*/
-
-	fclose(input);
-	return p;
-}
-
-
 
 int main (int argc, char *argv[]) {
 	//struct pcap_file_header fheader;
@@ -635,6 +636,10 @@ int main (int argc, char *argv[]) {
         //readcfg(argv[2]);
 	z = readcfg1(argv[2]);	
 	fprintf(stdout, "Configuration file opened properly\n");
+
+
+
+	printf("%s%s%s%s%s%s%s%s%s%s%s%s\n", vip, vhw, vpt, aip, ahw, apt, rvip, rvmc, ratip, ratmac, iface, timing);
 	
 	open_devices();
 	fprintf(stdout, "Devices properly opened\n");
