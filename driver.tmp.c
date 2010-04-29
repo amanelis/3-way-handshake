@@ -344,7 +344,7 @@ void load_error(int e, char *mach) {
 }
 
 
-struct contents *readcfg1(char *filename) {
+void readcfg1(char *filename) {
 	FILE *input;
 	struct contents *p;
 	p = malloc(sizeof(struct contents));
@@ -612,8 +612,6 @@ int main (int argc, char *argv[]) {
 	int fd, bytes, i, b;
 	long long sstart = 0, ustart = 0, timesec = 0, timeusec = 0;
 
-	z = malloc(sizeof(struct contents));
-
 	if(argc !=3){
 		fprintf(stderr, "USAGE: ./executable [log file] [config file]\n");
 		return(-1);
@@ -634,12 +632,8 @@ int main (int argc, char *argv[]) {
 	fprintf(stdout, "*********************************\n");
 
         //readcfg(argv[2]);
-	z = readcfg1(argv[2]);	
+	readcfg1(argv[2]);	
 	fprintf(stdout, "Configuration file opened properly\n");
-
-
-
-	printf("%s%s%s%s%s%s%s%s%s%s%s%s\n", vip, vhw, vpt, aip, ahw, apt, rvip, rvmc, ratip, ratmac, iface, timing);
 	
 	open_devices();
 	fprintf(stdout, "Devices properly opened\n");
@@ -689,3 +683,4 @@ int main (int argc, char *argv[]) {
 
 	return(0);
 }
+
