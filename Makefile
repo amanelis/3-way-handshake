@@ -23,4 +23,4 @@ temp: driver.tmp.c
 	$(CC) $(CFLAGS) driver.tmp.c -o tmpdriver $(LIBS)
 
 clean:
-	rm -f *.o ./oparse ./lparse ./pparse ./proxy ./driver ./tmpdriver
+	rm -f *.o ./oparse ./lparse ./pparse ./proxy ./driver ./tmpdriver ./*.*~

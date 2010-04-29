@@ -328,6 +328,79 @@ void load_error(int e, char *mach) {
   exit(-1);
 }
 
+struct contents *readcfg1(char *filename) {
+	FILE *input;
+	struct contents *p;
+	p = malloc(sizeof(struct contents));
+	
+	if((input = fopen(filename, "r")) == NULL){
+		fprintf(stderr, "ERROR: fopen()\n");
+		exit(-1);
+	}
+
+	
+	// Get client addresses, really victim 
+	if ( (err = load_address(input, cip, chw, &cad, &cha)) < 0 )
+		load_error(err,"Client");
+
+	// Get server addresses, really victim 
+	if ( (err = load_address(input, sip, shw, &sad, &sha)) < 0 )
+		load_error(err,"Server");
+
+	if ( fgets(iface, sizeof(iface), input) == NULL ) {
+		fprintf(stderr, "Interface too large\n");
+		exit(-1);
+	}
+	rmnl(iface);
+
+/*
+	// Gets the victim IP, MAC, PORT 
+	fgets(p->vicip, 32, input);
+	rmnl(p->vicip);
+
+	fgets(p->vicmc, 32, input);
+	rmnl(p->vicmc);
+
+	fgets(p->vicpt, 32, input);
+	rmnl(p->vicpt);
+
+	// Gets the attacker IP, MAC, PORT 
+	fgets(p->attip, 32, input);
+	rmnl(p->attip);
+
+	fgets(p->attmc, 32, input);
+	rmnl(p->attmc);
+
+	fgets(p->attpt, 32, input);
+	rmnl(p->attpt);	
+
+	// Gets the Replay victim IP, MAC 
+	fgets(p->repvicip, 32, input);
+	rmnl(p->repvicip);
+
+	fgets(p->repvicmc, 32, input);
+	rmnl(p->repvicmc);
+
+	// Gets the Replay attacker IP, MAC 
+	fgets(p->repattip, 32, input);
+	rmnl(p->repattip);
+
+	fgets(p->repattmc, 32, input);
+	rmnl(p->repattmc);
+
+
+	// Gets the interface 
+	fgets(p->interface, 32, input);
+	rmnl(p->interface);
+
+	// Gets the timing 
+	fgets(p->timing, 32, input);
+	rmnl(p->timing);
+*/
+	fclose(input);
+	return p;
+}
+
 
 void layer4 (char *layer4p, uint8_t type) {
 	struct tcp_hdr *tcph;
@@ -496,80 +569,6 @@ void layer2 (struct eth_hdr *ethhead, int size) {
 
 	layer3(((char *)ethhead)+14,ntohs((*ethhead).eth_type));
 }
-
-struct contents *readcfg1(char *filename) {
-	FILE *input;
-	struct contents *p;
-	p = malloc(sizeof(struct contents));
-	
-	if((input = fopen(filename, "r")) == NULL){
-		fprintf(stderr, "ERROR: fopen()\n");
-		exit(-1);
-	}
-
-	
-	// Get client addresses, really victim 
-	if ( (err = load_address(input, cip, chw, &cad, &cha)) < 0 )
-		load_error(err,"Client");
-
-	// Get server addresses, really victim 
-	if ( (err = load_address(input, sip, shw, &sad, &sha)) < 0 )
-		load_error(err,"Server");
-
-	if ( fgets(iface, sizeof(iface), input) == NULL ) {
-		fprintf(stderr, "Interface too large\n");
-		exit(-1);
-	}
-	rmnl(iface);
-
-/*
-	// Gets the victim IP, MAC, PORT 
-	fgets(p->vicip, 32, input);
-	rmnl(p->vicip);
-
-	fgets(p->vicmc, 32, input);
-	rmnl(p->vicmc);
-
-	fgets(p->vicpt, 32, input);
-	rmnl(p->vicpt);
-
-	// Gets the attacker IP, MAC, PORT 
-	fgets(p->attip, 32, input);
-	rmnl(p->attip);
-
-	fgets(p->attmc, 32, input);
-	rmnl(p->attmc);
-
-	fgets(p->attpt, 32, input);
-	rmnl(p->attpt);	
-
-	// Gets the Replay victim IP, MAC 
-	fgets(p->repvicip, 32, input);
-	rmnl(p->repvicip);
-
-	fgets(p->repvicmc, 32, input);
-	rmnl(p->repvicmc);
-
-	// Gets the Replay attacker IP, MAC 
-	fgets(p->repattip, 32, input);
-	rmnl(p->repattip);
-
-	fgets(p->repattmc, 32, input);
-	rmnl(p->repattmc);
-
-
-	// Gets the interface 
-	fgets(p->interface, 32, input);
-	rmnl(p->interface);
-
-	// Gets the timing 
-	fgets(p->timing, 32, input);
-	rmnl(p->timing);
-*/
-	fclose(input);
-	return p;
-}
-
 
 
 int main (int argc, char *argv[]) {
