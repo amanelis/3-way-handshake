@@ -542,7 +542,7 @@ int main (int argc, char *argv[]) {
 		layer2((struct eth_hdr *) &pktbuff, bytes);
 		i++;
 	}
-      
+
 	r = 0;
 	while((r = pcap_next_ex(p, &h, (const u_char **)&ethin))){
 		switch(r){
@@ -560,6 +560,6 @@ int main (int argc, char *argv[]) {
 
 		printf("@@@@@@@@ Reading packet: %s\n", pcap_geterr(p));
         }
-	
+
 	return(0);
 }
