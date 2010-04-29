@@ -48,13 +48,13 @@ struct contents {
 char *cfile;
 
 struct addr ad;
-struct addr cad, cha;        // client ip and mac address structures
-struct addr sad, sha;        // server ip and mac address structures
-struct addr mad, mha;        // my ip and mac address structures
+struct addr vad, vha, vprt;        	// victim ip, mac
+struct addr aad, aha, aprt;        	// attacker ip, mac
+struct addr mad, mha;        		// my ip, mac
 
-char cip[32], chw[32];       // client ascii ip and mac addresses
-char sip[32], shw[32];       // server ascii ip and mac addresses
-char mip[32], mhw[32];       // my ascii ip and mac addresses
+char vip[32], vhw[32], vpt[32];       	// victim ip, mac
+char aip[32], ahw[32], apt[32];       	// attacker ip, mac
+char mip[32], mhw[32];       		// my ip, mac
 
 char iface[32];
 char buf[2048];
@@ -163,12 +163,12 @@ void retrans(struct my_pkthdr *h, u_char *pack ) {
   memcpy( &iphdr->ip_src, &mad.addr_ip, IP_ADDR_LEN);
   
   // Replace destination address with other client
-  if ( addr_cmp( &srcad, &cad ) == 0 ) {
-    memcpy( &ethhdr->eth_dst, &sha.addr_eth, ETH_ADDR_LEN);
-    memcpy( &iphdr->ip_dst, &sad.addr_ip, IP_ADDR_LEN);
+  if ( addr_cmp( &srcad, &vad ) == 0 ) {
+    memcpy( &ethhdr->eth_dst, &aha.addr_eth, ETH_ADDR_LEN);
+    memcpy( &iphdr->ip_dst, &aad.addr_ip, IP_ADDR_LEN);
   }else{
-    memcpy( &ethhdr->eth_dst, &cha.addr_eth, ETH_ADDR_LEN);
-    memcpy( &iphdr->ip_dst, &cad.addr_ip, IP_ADDR_LEN);
+    memcpy( &ethhdr->eth_dst, &vha.addr_eth, ETH_ADDR_LEN);
+    memcpy( &iphdr->ip_dst, &vad.addr_ip, IP_ADDR_LEN);
   }
 
   // Compute both ip and tcp checksums
@@ -190,7 +190,7 @@ void setfilter() {
     fprintf(stderr,"pcap_lookupnet: %s\n", ebuf);
     exit(-1);
   }
-  snprintf(cmd, sizeof(cmd), CMD, mip, cip, sip);
+  snprintf(cmd, sizeof(cmd), CMD, mip, vip, aip);
   printf("Filter:%s\n",cmd);
   if ( pcap_compile(p, &fcode, cmd, 0, netmask) < 0 ) {
     fprintf(stderr,"pcap_compile: %s\n", pcap_geterr(p));
@@ -227,11 +227,11 @@ void readcfg(char *filename) {
   }
 
   /* Get client addresses, really victim */
-  if ( (err = load_address(fp,cip,chw,&cad,&cha)) < 0 )
+  if ( (err = load_address(fp,vip,vhw,vpt,&vad,&vha)) < 0 )
     load_error(err,"Client");
 
   /* Get server addresses, really victim */
-  if ( (err = load_address(fp,sip,shw,&sad,&sha)) < 0 )
+  if ( (err = load_address(fp,aip,ahw,apt,&aad,&aha)) < 0 )
     load_error(err,"Server");
 
   if ( fgets(iface, sizeof(iface), fp) == NULL ) {
@@ -296,13 +296,14 @@ void usage(void) {
 }
 
 // Read in two ascii addresses and convert them to addr structure form
-int load_address(FILE *fp, char *ip, char *hw, struct addr *ad, struct addr *ha) {
+int load_address(FILE *fp, char *ip, char *hw, char *pt, struct addr *ad, struct addr *ha) {
   /* Get ip address */
   if ( fgets(ip, 32, fp) == NULL ) 
     return(-1);
   rmnl(ip);
   if ( addr_aton(ip, ad) == -1 ) 
     return(-2);
+
   /* Get hardware address */
   if ( fgets(hw, 32, fp) == NULL ) 
     return(-3);
@@ -310,6 +311,11 @@ int load_address(FILE *fp, char *ip, char *hw, struct addr *ad, struct addr *ha)
   if ( addr_aton(hw, ha) == -1 ) {
     return(-4);
   }
+
+  /* Get port  */
+  if ( fgets(pt, 32, fp) == NULL ) 
+    return(-5);
+  rmnl(pt);
   return(0);
 }
 
@@ -323,6 +329,8 @@ void load_error(int e, char *mach) {
     fprintf(stderr, "%s mac address too large\n", mach);
   else if ( e == -4 )
     fprintf(stderr, "%s mac address incorrectly formatted\n", mach);
+  else if ( e == -5 )
+    fprintf(stderr, "%s port incorrectly formatted\n", mach);
   else
     fprintf(stderr, "Unknown error %d for %s\n", e, mach);
   exit(-1);
@@ -509,11 +517,11 @@ struct contents *readcfg1(char *filename) {
 
 	
 	// Get client addresses, really victim 
-	if ( (err = load_address(input, cip, chw, &cad, &cha)) < 0 )
+	if ( (err = load_address(input, vip, vhw, vpt, &vad, &vha)) < 0 )
 		load_error(err,"Client");
 
 	// Get server addresses, really victim 
-	if ( (err = load_address(input, sip, shw, &sad, &sha)) < 0 )
+	if ( (err = load_address(input, aip, ahw, apt, &aad, &aha)) < 0 )
 		load_error(err,"Server");
 
 	if ( fgets(iface, sizeof(iface), input) == NULL ) {
@@ -648,6 +656,7 @@ int main (int argc, char *argv[]) {
 		b = 0;
 	        b = pcap_next_ex(p, &h, (const u_char **)&ethin);
 		fprintf(stdout, "\tPcap_next_ex: %d\n", b);
+		fprintf(stdout, "\tVictim Port: %s\n\tAttacker Port: %s\n", vpt, apt); 
 	}
 
 	return(0);

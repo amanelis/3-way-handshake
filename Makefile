@@ -19,5 +19,8 @@ proxy: proxy.c
 driver: driver.c
 	$(CC) $(CFLAGS) driver.c -o driver $(LIBS)
 
+temp: driver.tmp.c
+	$(CC) $(CFLAGS) driver.tmp.c -o tmpdriver $(LIBS)
+
 clean:
 	rm -f *.o ./oparse ./lparse ./pparse ./proxy ./driver
