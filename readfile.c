@@ -4,7 +4,7 @@
 #include <string.h>
 
 struct contents {
-	char vicip[32];
+	char vicip[40];
 	char vicmc[32];
 	char vicpt[32];
 
@@ -23,17 +23,25 @@ struct contents {
 	char timing[32];
 };	
 
-void readcfg(char *filename) {
+// Replace newline with null character
+void rmnl(char *s) {
+  while ( *s != '\n' && *s != '\0' )
+    s++;
+  *s = '\0';
+}
+
+struct contents *readcfg(char *filename) {
 	FILE *input;
 	struct contents *p;
-
+	p = malloc(sizeof(struct contents));
+	
 	if((input = fopen(filename, "r")) == NULL){
 		fprintf(stderr, "ERROR: fopen()\n");
 		exit(-1);
 	}
-
-	while(feof(input) == 0){
-		fscanf(input, p->vicip);
+		fgets(p->vicip, 34, input);
+		rmnl(p->vicip);
+		/*
 		fscanf(input, p->vicmc);
 		fscanf(input, p->vicpt);
 		
@@ -50,7 +58,8 @@ void readcfg(char *filename) {
 		fscanf(input, p->interface);
 
 		fscanf(input, p->timing);
-	}
+		*/
+	return p;
 }
 
 int main(int argc, char *argv[]) {
@@ -62,10 +71,12 @@ int main(int argc, char *argv[]) {
 	char *file;
 	file = argv[1];
 
+	struct contents *s;
 	
-	readcfg(file);
-
-
+	s = readcfg(file);
+	
+	printf("%s\n", s->vicip);
+	
 
 	return(0);
 }

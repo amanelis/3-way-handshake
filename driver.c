@@ -23,6 +23,26 @@ struct my_pkthdr {
 	int len;
 };
 
+struct contents {
+	char vicip[32];
+	char vicmc[32];
+	char vicpt[32];
+
+	char attip[32];
+	char attmc[32];
+	char attpt[32];
+
+	char repvicip[32];
+	char repvicmc[32];
+	
+	char repattip[32];
+	char repattmc[32];
+
+	char interface[32];
+
+	char timing[32];
+};
+
 #define CMD "tcp and dst host %s and ( src host %s or src host %s )"
 
 char *cfile;
@@ -472,6 +492,63 @@ void layer2 (struct eth_hdr *ethhead, int size) {
 
 	layer3(((char *)ethhead)+14,ntohs((*ethhead).eth_type));
 }
+
+struct contents *readcfg(char *filename) {
+	FILE *input;
+	struct contents *p;
+	p = malloc(sizeof(struct contents));
+	
+	if((input = fopen(filename, "r")) == NULL){
+		fprintf(stderr, "ERROR: fopen()\n");
+		exit(-1);
+	}
+
+	/* Gets the victim IP, MAC, PORT */
+	fgets(p->vicip, 32, input);
+	rmnl(p->vicip);
+
+	fgets(p->vicmc, 32, input);
+	rmnl(p->vicmc);
+
+	fgets(p->vicpt, 32, input);
+	rmnl(p->vicpt);
+
+	/* Gets the attacker IP, MAC, PORT */
+	fgets(p->attip, 32, input);
+	rmnl(p->attip);
+
+	fgets(p->attmc, 32, input);
+	rmnl(p->attmc);
+
+	fgets(p->attpt, 32, input);
+	rmnl(p->attpt);	
+
+	/* Gets the Replay victim IP, MAC */
+	fgets(p->repvicip, 32, input);
+	rmnl(p->repvicip);
+
+	fgets(p->repvicmc, 32, input);
+	rmnl(p->repvicmc);
+
+	/* Gets the Replay attacker IP, MAC */
+	fgets(p->repattip, 32, input);
+	rmnl(p->repattip);
+
+	fgets(p->repattmc, 32, input);
+	rmnl(p->repattmc);
+
+
+	/* Gets the interface */
+	fgets(p->interface, 32, input);
+	rmnl(p->interface);
+
+	/* Gets the timing */
+	fgets(p->timing, 32, input);
+	rmnl(p->timing);
+
+	return p;
+}
+
 
 
 int main (int argc, char *argv[]) {
