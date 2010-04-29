@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 struct contents {
 	char vicip[32];
@@ -22,34 +23,49 @@ struct contents {
 	char timing[32];
 };	
 
-void readFile(char *filename) {
-	FILE *infile;
+void readcfg(char *filename) {
+	FILE *input;
+	struct contents *p;
 
-	if((infile = fopen(filename, "r")) == NULL){
+	if((input = fopen(filename, "r")) == NULL){
 		fprintf(stderr, "ERROR: fopen()\n");
 		exit(-1);
 	}
 
 	while(feof(input) == 0){
-		fscanf(input, contents->vicip);
-		fscanf(input, contents->vipmc);
-		fscanf(input, contents->vicpt);
+		fscanf(input, p->vicip);
+		fscanf(input, p->vicmc);
+		fscanf(input, p->vicpt);
 		
-		fscanf(input, contents->attip);
-		fscanf(input, contents->attmc);
-		fscanf(input, contents->attpt);
+		fscanf(input, p->attip);
+		fscanf(input, p->attmc);
+		fscanf(input, p->attpt);
 
-		fscanf(input, contents->repvicip);
-		fscanf(input, contents->repvicmc);
+		fscanf(input, p->repvicip);
+		fscanf(input, p->repvicmc);
 
-		fscanf(input, contents->repattip);
-		fscanf(input, contents->repattmc);
+		fscanf(input, p->repattip);
+		fscanf(input, p->repattmc);
 
-		fscanf(input, contents->interface);
+		fscanf(input, p->interface);
 
-		fscanf(input, contents->timing);
+		fscanf(input, p->timing);
+	}
+}
+
+int main(int argc, char *argv[]) {
+	if(argc !=2){
+		fprintf(stderr, "USAGE: ./executable <config file>\n");
+		return(-1);
 	}
 
+	char *file;
+	file = argv[1];
+
+	
+	readcfg(file);
 
 
+
+	return(0);
 }
