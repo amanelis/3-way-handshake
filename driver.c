@@ -605,7 +605,6 @@ int main (int argc, char *argv[]) {
 		return(-1);
 	}
 	
-	
 	printf("TCP Dump analysis by Alex Manelis\n");
 	fprintf(stdout, "*********************************\n");
 
