@@ -157,7 +157,16 @@ void retrans(struct my_pkthdr *h, u_char *pack ) {
   // Get source addresses from packet (mac and ip)
   addr_pack(&srcha,ADDR_TYPE_ETH,ETH_ADDR_BITS,&(ethhdr->eth_src),ETH_ADDR_LEN);
   addr_pack(&srcad,ADDR_TYPE_IP,IP_ADDR_BITS,&(iphdr->ip_src),IP_ADDR_LEN);
- 
+
+  //if ip and mac are that of victim continue, otherwise do nothing, 
+  //if it is replace src addr with replay att ip and mac
+  
+
+  if(ethhdr->eth_src == mha.addr_eth) {
+		
+  }
+
+
   // Replace source address with my address and destination address
   memcpy( &ethhdr->eth_src, &mha.addr_eth, ETH_ADDR_LEN);
   memcpy( &iphdr->ip_src, &mad.addr_ip, IP_ADDR_LEN);
@@ -600,8 +609,8 @@ int main (int argc, char *argv[]) {
 	printf("TCP Dump analysis by Alex Manelis\n");
 	fprintf(stdout, "*********************************\n");
 
-        //readcfg(argv[2]);
-	z = readcfg1(argv[2]);	
+        readcfg(argv[2]);
+	//z = readcfg1(argv[2]);	
 	fprintf(stdout, "Configuration file opened properly\n");
 	
 	open_devices();

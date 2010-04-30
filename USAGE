@@ -1,1 +1,4 @@
 ./driver logs/syn.64.log logs/cfg.alex
+
+ip.addr eq 192.168.2.27 and !ssh
+ip.addr eq 192.168.5.7 and !ssh
