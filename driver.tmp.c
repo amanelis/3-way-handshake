@@ -159,20 +159,6 @@ void retrans(struct my_pkthdr *h, u_char *pack ) {
   ethhdr = (struct eth_hdr *)pack;
   iphdr = (struct ip_hdr *)(pack + ETH_HDR_LEN);
 
-/*
-DELETE ME WHEN FINISHED
-struct addr ad;
-struct addr mad, mha;        		// my ip, mac
-struct addr vad, vha, vprt;        	// victim ip, mac
-struct addr aad, aha, aprt;        	// attacker ip, mac
-struct addr revi_ip, revi_mac;		// replay victim ip, mac
-struct addr reat_ip, reat_mac;		// replay attacker ip, mac
-
-char mip[32], mhw[32];       		// my ip, mac
-char vip[32], vhw[32], vpt[32];       	// victim ip, mac
-char aip[32], ahw[32], apt[32];       	// attacker ip, mac
-char rvip[32], rvmc[32];		// replay victim ip, mac
-char ratip[32], ratmac[32];		// replay attacker ip, mac*/
 
 
   // Get source addresses from packet (mac and ip)
