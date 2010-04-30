@@ -251,32 +251,6 @@ void rmslash(char *s) {
   *s = '\0';
 }
 
-// Read in configuration file and put the addresses into
-// addr structures
-void readcfg(char *filename) {
-  FILE *fp;
-
-  fp = fopen(filename,"r");
-  if ( fp == NULL ) {
-    perror(filename);
-    exit(-1);
-  }
-
-  /* Get client addresses, really victim */
-  if ( (err = load_address(fp,vip,vhw,vpt,&vad,&vha)) < 0 )
-    load_error(err,"Client");
-
-  /* Get server addresses, really victim */
-  if ( (err = load_address(fp,aip,ahw,apt,&aad,&aha)) < 0 )
-    load_error(err,"Server");
-
-  if ( fgets(iface, sizeof(iface), fp) == NULL ) {
-    fprintf(stderr, "Interface too large\n");
-    exit(-1);
-  }
-  rmnl(iface);
-  fclose(fp);
-}
 
 // Open eth0, get this machines mac and ip addresses (already
 // in addr structures and get an ethernet handle and a pcap
@@ -416,6 +390,7 @@ void readcfg1(char *filename) {
 	rmnl(timing);
 
 
+	//was going to store into a structure
 	/*
 	// Gets the victim IP, MAC, PORT 
 	fgets(p->vicip, 32, input);
