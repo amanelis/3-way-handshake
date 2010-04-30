@@ -317,8 +317,7 @@ int load_address(FILE *fp, char *ip, char *hw, char *pt, struct addr *ad, struct
   }
 
   /* Get port  */
-//  if(!((strcmp(pt, vpt)==0) || (strcmp(pt, apt)==0))) {
-  if(swit==1){
+  if(swit == 1){
      if ( fgets(pt, 32, fp) == NULL ) 
        return(-5);
      rmnl(pt);
