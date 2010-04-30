@@ -161,11 +161,11 @@ void retrans(struct my_pkthdr *h, u_char *pack ) {
   //if ip and mac are that of victim continue, otherwise do nothing, 
   //if it is replace src addr with replay att ip and mac
   
-
+/*
   if(ethhdr->eth_src.data == mha.addr_eth.data) {
     	
   }
-
+*/
 
   // Replace source address with my address and destination address
   memcpy( &ethhdr->eth_src, &mha.addr_eth, ETH_ADDR_LEN);
