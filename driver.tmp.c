@@ -64,6 +64,7 @@ char iface[32];
 char timing[32];
 char buf[2048];
 char ebuf[2048];
+char filter[200];
 
 FILE *fp;
 int err;
@@ -194,6 +195,7 @@ void retrans(struct my_pkthdr *h, u_char *pack ) {
 // Set the bpf filter to only accept tcp packets from the clients
 // to this machine.
 void setfilter() {
+/*
   char cmd[128];
   if ( pcap_lookupnet(iface, &localnet, &netmask, ebuf) < 0 ) {
     fprintf(stderr,"pcap_lookupnet: %s\n", ebuf);
@@ -209,6 +211,31 @@ void setfilter() {
     fprintf(stderr,"pcap_setfilter: %s\n", pcap_geterr(p));
     exit(-1);
   }
+*/
+
+  char cmd[96];
+/*if ( pcap_lookupnet(iface, &localnet, &netmask, ebuf) < 0 ) {
+    fprintf(stderr,"pcap_lookupnet: %s\n", ebuf);
+    exit(-1);
+  }
+  snprintf(cmd, sizeof(cmd), CMD, rvip,mip, ratip);
+  printf("Filter:%s\n",cmd);
+  if ( pcap_compile(p, &fcode, cmd, 0, netmask) < 0 ) {
+    fprintf(stderr,"pcap_compile: %s\n", pcap_geterr(p));
+    exit(-1);
+  }
+  if ( pcap_setfilter(p, &fcode) < 0 ) {
+    fprintf(stderr,"pcap_setfilter: %s\n", pcap_geterr(p));
+    exit(-1);
+  }*/
+  char *filter;
+  if((filter=malloc(sizeof(char)*(32*6)))==NULL){
+    return;
+  }
+  sprintf(filter, "%s, %s, %s, %s, %s, %s", ahw,vhw,aip,vip,apt,vpt);  
+  pcap_compile(p,&fp,filter,0,0);
+  pcap_setfilter(p,&fp);
+
 }
 // Replace newline with null character
 void rmnl(char *s) {
@@ -631,7 +658,6 @@ int main (int argc, char *argv[]) {
 		return(-1);
 	}
 	
-	
 	printf("TCP Dump analysis by Alex Manelis\n");
 	fprintf(stdout, "*********************************\n");
 
@@ -662,7 +688,6 @@ int main (int argc, char *argv[]) {
 				timesec--;
 			}
 		}
-
 
 		printf("\nPacket %d\n%05lld.%06lld\nCaptured Packet Length = %d\n",i,timesec,timeusec,pheader.caplen);
 		printf("Actual Packet Length = %d\n", pheader.len);
