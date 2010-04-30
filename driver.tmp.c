@@ -153,37 +153,56 @@ void retrans(struct my_pkthdr *h, u_char *pack ) {
   struct eth_hdr *ethhdr;
   struct ip_hdr *iphdr;
   struct addr srcad, srcha;
+  char sip[32],smac[32];
   int n;
 
   ethhdr = (struct eth_hdr *)pack;
   iphdr = (struct ip_hdr *)(pack + ETH_HDR_LEN);
 
+/*
+DELETE ME WHEN FINISHED
+struct addr ad;
+struct addr mad, mha;        		// my ip, mac
+struct addr vad, vha, vprt;        	// victim ip, mac
+struct addr aad, aha, aprt;        	// attacker ip, mac
+struct addr revi_ip, revi_mac;		// replay victim ip, mac
+struct addr reat_ip, reat_mac;		// replay attacker ip, mac
+
+char mip[32], mhw[32];       		// my ip, mac
+char vip[32], vhw[32], vpt[32];       	// victim ip, mac
+char aip[32], ahw[32], apt[32];       	// attacker ip, mac
+char rvip[32], rvmc[32];		// replay victim ip, mac
+char ratip[32], ratmac[32];		// replay attacker ip, mac*/
+
+
   // Get source addresses from packet (mac and ip)
   addr_pack(&srcha,ADDR_TYPE_ETH,ETH_ADDR_BITS,&(ethhdr->eth_src),ETH_ADDR_LEN);
   addr_pack(&srcad,ADDR_TYPE_IP,IP_ADDR_BITS,&(iphdr->ip_src),IP_ADDR_LEN);
  
-  // Replace source address with my address and destination address
-  memcpy( &ethhdr->eth_src, &mha.addr_eth, ETH_ADDR_LEN);
-  memcpy( &iphdr->ip_src, &mad.addr_ip, IP_ADDR_LEN);
-  
-  // Replace destination address with other client
-  if ( addr_cmp( &srcad, &vad ) == 0 ) {
-    memcpy( &ethhdr->eth_dst, &aha.addr_eth, ETH_ADDR_LEN);
-    memcpy( &iphdr->ip_dst, &aad.addr_ip, IP_ADDR_LEN);
-  }else{
-    memcpy( &ethhdr->eth_dst, &vha.addr_eth, ETH_ADDR_LEN);
-    memcpy( &iphdr->ip_dst, &vad.addr_ip, IP_ADDR_LEN);
-  }
+  if((srcha.addr_type==ADDR_TYPE_ETH)&&(aha.addr_type==ADDR_TYPE_ETH)&&((strcmp(addr_ntoa(&srcha),ahw)==0))){
+	// Replace source address with my address and destination address
+	memcpy( &ethhdr->eth_src, &reat_mac.addr_eth, ETH_ADDR_LEN);
+	memcpy( &iphdr->ip_src, &reat_ip.addr_ip, IP_ADDR_LEN);
 
-  // Compute both ip and tcp checksums
-  ip_checksum((void *)iphdr, ntohs(iphdr->ip_len));
-  // Send packet
-  n = eth_send(e,pack,h->len);
-  if ( n != h->len ) { 
-    fprintf(stderr,"Partial packet transmission %d/%d\n",n,h->len);
-  } else {
-    fprintf(stdout, "Packet Transmission Successfull %d %d\n", n, h->len);
-  }
+	// Replace destination address with other client
+	if ( addr_cmp( &srcad, &aad ) == 0 ) {
+		memcpy( &ethhdr->eth_dst, &revi_mac.addr_eth, ETH_ADDR_LEN);
+		memcpy( &iphdr->ip_dst, &revi_ip.addr_ip, IP_ADDR_LEN);
+	}else{
+		memcpy( &ethhdr->eth_dst, &reat_mac.addr_eth, ETH_ADDR_LEN);
+		memcpy( &iphdr->ip_dst, &reat_ip.addr_ip, IP_ADDR_LEN);
+	}
+
+	// Compute both ip and tcp checksums
+	ip_checksum((void *)iphdr, ntohs(iphdr->ip_len));
+		// Send packet
+		n = eth_send(e,pack,h->len);
+	if ( n != h->len ) { 
+		fprintf(stderr,"Partial packet transmission %d/%d\n",n,h->len);
+	} else {
+		fprintf(stdout, "Packet Transmission Successfull %d %d\n", n, h->len);
+	}
+   }
 }
 
 // Set the bpf filter to only accept tcp packets from the clients
@@ -630,7 +649,6 @@ int main (int argc, char *argv[]) {
 	printf("TCP Dump analysis by Alex Manelis\n");
 	fprintf(stdout, "*********************************\n");
 
-        //readcfg(argv[2]);
 	readcfg1(argv[2]);	
 	fprintf(stdout, "Configuration file opened properly\n");
 	
@@ -677,7 +695,6 @@ int main (int argc, char *argv[]) {
 		b = 0;
 	        b = pcap_next_ex(p, &h, (const u_char **)&ethin);
 		fprintf(stdout, "\tPcap_next_ex: %d\n", b);
-		fprintf(stdout, "\tVictim Port: %s\n\tAttacker Port: %s\n", vpt, apt); 
 	}
 
 	return(0);
