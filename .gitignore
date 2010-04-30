@@ -4,6 +4,7 @@ pparse
 lparse
 oparse
 driver
+tmpdriver
 *.out
 *.*~
 
