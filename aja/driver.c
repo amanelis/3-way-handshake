@@ -23,38 +23,53 @@ struct my_pkthdr {
 	int len;
 };
 
+struct contents {
+	char vicip[32];
+	char vicmc[32];
+	char vicpt[32];
+
+	char attip[32];
+	char attmc[32];
+	char attpt[32];
+
+	char repvicip[32];
+	char repvicmc[32];
+	
+	char repattip[32];
+	char repattmc[32];
+
+	char interface[32];
+
+	char timing[32];
+};
 
 #define CMD "tcp and dst host %s and ( src host %s or src host %s )"
 
 char *cfile;
 
 struct addr ad;
-struct addr mad, mha;        		// my ip, mac
-struct addr vad, vha, vprt;        	// victim ip, mac
-struct addr aad, aha, aprt;        	// attacker ip, mac
-struct addr revi_ip, revi_mac;		// replay victim ip, mac
-struct addr reat_ip, reat_mac;		// replay attacker ip, mac
+struct addr cad, cha;        // client ip and mac address structures
+struct addr sad, sha;        // server ip and mac address structures
+struct addr mad, mha;        // my ip and mac address structures
 
-char mip[32], mhw[32];       		// my ip, mac
-char vip[32], vhw[32], vpt[32];       	// victim ip, mac
-char aip[32], ahw[32], apt[32];       	// attacker ip, mac
-char rvip[32], rvmc[32];		// replay victim ip, mac
-char ratip[32], ratmac[32];		// replay attacker ip, mac
+char cip[32], chw[32];       // client ascii ip and mac addresses
+char sip[32], shw[32];       // server ascii ip and mac addresses
+char mip[32], mhw[32];       // my ascii ip and mac addresses
 
 char iface[32];
-char timing[32];
 char buf[2048];
 char ebuf[2048];
 
 FILE *fp;
 int err;
-int swit;
+
 intf_t *i;
 eth_t *e;
 pcap_t *p;
 struct intf_entry ie;
 struct bpf_program fcode;
 uint32_t localnet, netmask;
+
 pcap_t *packetfile;
 
 //  This is a simple implementation of a proxy machine.  Effectively
@@ -130,174 +145,61 @@ int main(int argc, char *argv[]) {
 
 //void retrans(u_char *user, struct pcap_pkthdr *h, u_char *pack ) {
 //void retrans(struct pcap_pkthdr *h, u_char *pack ) {
-int main (int argc, char *argv[]) {
-	//struct pcap_file_header fheader;
-	struct my_pkthdr pheader;
-	struct contents *z;
-	char pktbuff[20000];
-	int fd, bytes, i, b;
-	long long sstart = 0, ustart = 0, timesec = 0, timeusec = 0;
-
-	if(argc !=3){
-		fprintf(stderr, "USAGE: ./executable [log file] [config file]\n");
-		return(-1);
-	}
-
-	if((fd = open(argv[1], O_RDONLY)) == -1){
-		fprintf(stderr, "ERROR: on fd = open(argv[1], O_RDONLY)\n");
-		return(-1);
-	}
-
-	if((bytes = read(fd, &pheader, 24)) !=24){
-		fprintf(stderr, "ERROR: on bytes = read()\n");
-		return(-1);
-	}
-	
-	
-	fprintf(stdout, "**********************START************************\n");
-
-	readcfg1(argv[2]);	
-	fprintf(stdout, "Configuration file opened properly\n");
-	
-	open_devices();
-	fprintf(stdout, "Devices properly opened\n");
-	
-	setfilter();
-	fprintf(stdout, "Filters have been compiled\n");
-
-	struct eth_hdr *ethin;
-	struct pcap_pkthdr h;
-	
-	ethin = malloc(sizeof(struct eth_hdr));
-
-
-	i = 0;
-	while((bytes = read(fd, &pheader, 16)) == 16){
-		if(i == 0){
-			ustart = pheader.ts.tv_usec;
-			sstart = pheader.ts.tv_sec;
-		} else {
-			timeusec = pheader.ts.tv_usec-ustart;
-			timesec = pheader.ts.tv_sec-sstart;
-			if (timeusec < 0){
-				timeusec += 1000000;
-				timesec--;
-			}
-		}
-
-
-		printf("\nPacket %d\n%05lld.%06lld\nCaptured Packet Length = %d\n",i,timesec,timeusec,pheader.caplen);
-		printf("Actual Packet Length = %d\n", pheader.len);
-
-		if((bytes = read(fd, &pktbuff, pheader.caplen)) !=pheader.caplen){
-			fprintf(stdout, "End of file or error on packet read\n");
-			fprintf(stdout, "%d\n", pheader.caplen);
-			return(-1);
-		}
-		
-		retrans(&pheader, pktbuff);
-					
-		layer2((struct eth_hdr *) &pktbuff, bytes);
-		i++;
-        
-		b = 0;
-	        b = pcap_next_ex(p, &h, (const u_char **)&ethin);
-		fprintf(stdout, "\tPCAP Read: %d\n", b);
-	}
-	sleep(1);
-
-	return(0);
-}
-
 void retrans(struct my_pkthdr *h, u_char *pack ) {
   struct eth_hdr *ethhdr;
   struct ip_hdr *iphdr;
   struct addr srcad, srcha;
-  char sip[32],smac[32];
   int n;
 
   ethhdr = (struct eth_hdr *)pack;
   iphdr = (struct ip_hdr *)(pack + ETH_HDR_LEN);
 
-/*
-DELETE ME WHEN FINISHED
-struct addr ad;
-struct addr mad, mha;        		// my ip, mac
-struct addr vad, vha, vprt;        	// victim ip, mac
-struct addr aad, aha, aprt;        	// attacker ip, mac
-struct addr revi_ip, revi_mac;		// replay victim ip, mac
-struct addr reat_ip, reat_mac;		// replay attacker ip, mac
-
-char mip[32], mhw[32];       		// my ip, mac
-char vip[32], vhw[32], vpt[32];       	// victim ip, mac
-char aip[32], ahw[32], apt[32];       	// attacker ip, mac
-char rvip[32], rvmc[32];		// replay victim ip, mac
-char ratip[32], ratmac[32];		// replay attacker ip, mac*/
-
-
   // Get source addresses from packet (mac and ip)
   addr_pack(&srcha,ADDR_TYPE_ETH,ETH_ADDR_BITS,&(ethhdr->eth_src),ETH_ADDR_LEN);
   addr_pack(&srcad,ADDR_TYPE_IP,IP_ADDR_BITS,&(iphdr->ip_src),IP_ADDR_LEN);
-  if((strcmp(addr_ntoa(&srcha),vhw)==0)){
-	// Replace source address with my address and destination address
-	memcpy( &ethhdr->eth_src, &revi_mac.addr_eth, ETH_ADDR_LEN);
-	memcpy( &iphdr->ip_src, &revi_ip.addr_ip, IP_ADDR_LEN);
 
-	// Replace destination address with other client
-	if ( addr_cmp( &srcad, &vad ) == 0 ) {
-		memcpy( &ethhdr->eth_dst, &reat_mac.addr_eth, ETH_ADDR_LEN);
-		memcpy( &iphdr->ip_dst, &reat_ip.addr_ip, IP_ADDR_LEN);
-	}else{
-		memcpy( &ethhdr->eth_dst, &revi_mac.addr_eth, ETH_ADDR_LEN);
-		memcpy( &iphdr->ip_dst, &revi_ip.addr_ip, IP_ADDR_LEN);
-	}
+  //if ip and mac are that of victim continue, otherwise do nothing, 
+  //if it is replace src addr with replay att ip and mac
+  
 
-	// Compute both ip and tcp checksums
-	ip_checksum((void *)iphdr, ntohs(iphdr->ip_len));
-		// Send packet
-		n = eth_send(e,pack,h->len);
-	if ( n != h->len ) { 
-		fprintf(stderr,"Partial packet transmission %d/%d\n",n,h->len);
-	} else {
-		fprintf(stdout, "Packet Transmission Successfull %d %d\n", n, h->len);
-	}
+  if(ethhdr->eth_src.data == mha.addr_eth.data) {
+    	
   }
 
-  if((strcmp(addr_ntoa(&srcha),ahw)==0)){
-	// Replace source address with my address and destination address
-	memcpy( &ethhdr->eth_src, &reat_mac.addr_eth, ETH_ADDR_LEN);
-	memcpy( &iphdr->ip_src, &reat_ip.addr_ip, IP_ADDR_LEN);
 
-	// Replace destination address with other client
-	if ( addr_cmp( &srcad, &aad ) == 0 ) {
-		memcpy( &ethhdr->eth_dst, &revi_mac.addr_eth, ETH_ADDR_LEN);
-		memcpy( &iphdr->ip_dst, &revi_ip.addr_ip, IP_ADDR_LEN);
-	}else{
-		memcpy( &ethhdr->eth_dst, &reat_mac.addr_eth, ETH_ADDR_LEN);
-		memcpy( &iphdr->ip_dst, &reat_ip.addr_ip, IP_ADDR_LEN);
-	}
+  // Replace source address with my address and destination address
+  memcpy( &ethhdr->eth_src, &mha.addr_eth, ETH_ADDR_LEN);
+  memcpy( &iphdr->ip_src, &mad.addr_ip, IP_ADDR_LEN);
+  
+  // Replace destination address with other client
+  if ( addr_cmp( &srcad, &cad ) == 0 ) {
+    memcpy( &ethhdr->eth_dst, &sha.addr_eth, ETH_ADDR_LEN);
+    memcpy( &iphdr->ip_dst, &sad.addr_ip, IP_ADDR_LEN);
+  }else{
+    memcpy( &ethhdr->eth_dst, &cha.addr_eth, ETH_ADDR_LEN);
+    memcpy( &iphdr->ip_dst, &cad.addr_ip, IP_ADDR_LEN);
+  }
 
-	// Compute both ip and tcp checksums
-	ip_checksum((void *)iphdr, ntohs(iphdr->ip_len));
-		// Send packet
-		n = eth_send(e,pack,h->len);
-	if ( n != h->len ) { 
-		fprintf(stderr,"Partial packet transmission %d/%d\n",n,h->len);
-	} else {
-		fprintf(stdout, "Packet Transmission Successfull %d %d\n", n, h->len);
-	}
-   }
+  // Compute both ip and tcp checksums
+  ip_checksum((void *)iphdr, ntohs(iphdr->ip_len));
+  // Send packet
+  n = eth_send(e,pack,h->len);
+  if ( n != h->len ) { 
+    fprintf(stderr,"Partial packet transmission %d/%d\n",n,h->len);
+  } else {
+    fprintf(stdout, "Packet Transmission Successfull %d %d\n", n, h->len);
+  }
 }
 
 // Set the bpf filter to only accept tcp packets from the clients
 // to this machine.
 void setfilter() {
-  char cmd[96];
-/*if ( pcap_lookupnet(iface, &localnet, &netmask, ebuf) < 0 ) {
+  char cmd[128];
+  if ( pcap_lookupnet(iface, &localnet, &netmask, ebuf) < 0 ) {
     fprintf(stderr,"pcap_lookupnet: %s\n", ebuf);
     exit(-1);
   }
-  snprintf(cmd, sizeof(cmd), CMD, rvip,mip, ratip);
+  snprintf(cmd, sizeof(cmd), CMD, mip, cip, sip);
   printf("Filter:%s\n",cmd);
   if ( pcap_compile(p, &fcode, cmd, 0, netmask) < 0 ) {
     fprintf(stderr,"pcap_compile: %s\n", pcap_geterr(p));
@@ -306,14 +208,7 @@ void setfilter() {
   if ( pcap_setfilter(p, &fcode) < 0 ) {
     fprintf(stderr,"pcap_setfilter: %s\n", pcap_geterr(p));
     exit(-1);
-  }*/
-  char *filter;
-  if((filter=malloc(sizeof(char)*(32*6)))==NULL){
-    return;
   }
-  sprintf(filter, "%s, %s, %s, %s, %s, %s", ahw,vhw,aip,vip,apt,vpt);  
-  pcap_compile(p,&fp,filter,0,0);
-  pcap_setfilter(p,&fp);
 }
 // Replace newline with null character
 void rmnl(char *s) {
@@ -327,6 +222,33 @@ void rmslash(char *s) {
   while ( *s != '/' && *s != '\0' )
     s++;
   *s = '\0';
+}
+
+// Read in configuration file and put the addresses into
+// addr structures
+void readcfg(char *filename) {
+  FILE *fp;
+
+  fp = fopen(filename,"r");
+  if ( fp == NULL ) {
+    perror(filename);
+    exit(-1);
+  }
+
+  /* Get client addresses, really victim */
+  if ( (err = load_address(fp,cip,chw,&cad,&cha)) < 0 )
+    load_error(err,"Client");
+
+  /* Get server addresses, really victim */
+  if ( (err = load_address(fp,sip,shw,&sad,&sha)) < 0 )
+    load_error(err,"Server");
+
+  if ( fgets(iface, sizeof(iface), fp) == NULL ) {
+    fprintf(stderr, "Interface too large\n");
+    exit(-1);
+  }
+  rmnl(iface);
+  fclose(fp);
 }
 
 // Open eth0, get this machines mac and ip addresses (already
@@ -371,7 +293,6 @@ void open_devices(void) {
       exit(-1);
     }
 }
-
 void usage(void) {
     fprintf(stderr, "Usage: proxy <configuration file>\n");
     fprintf(stderr, "         configuration file format\n");
@@ -384,27 +305,19 @@ void usage(void) {
 }
 
 // Read in two ascii addresses and convert them to addr structure form
-int load_address(FILE *fp, char *ip, char *hw, char *pt, struct addr *ad, struct addr *ha, int swit) {
+int load_address(FILE *fp, char *ip, char *hw, struct addr *ad, struct addr *ha) {
   /* Get ip address */
   if ( fgets(ip, 32, fp) == NULL ) 
     return(-1);
   rmnl(ip);
   if ( addr_aton(ip, ad) == -1 ) 
     return(-2);
-
   /* Get hardware address */
   if ( fgets(hw, 32, fp) == NULL ) 
     return(-3);
   rmnl(hw);
   if ( addr_aton(hw, ha) == -1 ) {
     return(-4);
-  }
-
-  /* Get port  */
-  if(swit == 1){
-     if ( fgets(pt, 32, fp) == NULL ) 
-       return(-5);
-     rmnl(pt);
   }
   return(0);
 }
@@ -419,52 +332,82 @@ void load_error(int e, char *mach) {
     fprintf(stderr, "%s mac address too large\n", mach);
   else if ( e == -4 )
     fprintf(stderr, "%s mac address incorrectly formatted\n", mach);
-  else if ( e == -5 )
-    fprintf(stderr, "%s port incorrectly formatted\n", mach);
   else
     fprintf(stderr, "Unknown error %d for %s\n", e, mach);
   exit(-1);
 }
 
-
-void readcfg1(char *filename) {
+struct contents *readcfg1(char *filename) {
 	FILE *input;
+	struct contents *p;
+	p = malloc(sizeof(struct contents));
 	
 	if((input = fopen(filename, "r")) == NULL){
 		fprintf(stderr, "ERROR: fopen()\n");
 		exit(-1);
 	}
 
-	// Get victim ip, mac, port
-	if ( (err = load_address(input, vip, vhw, vpt, &vad, &vha,1)) < 0 )
-		load_error(err,"Original Victim");
+	
+	// Get client addresses, really victim 
+	if ( (err = load_address(input, cip, chw, &cad, &cha)) < 0 )
+		load_error(err,"Client");
 
-	// Get attacker ip, mac, port
-	if ( (err = load_address(input, aip, ahw, apt, &aad, &aha,1)) < 0 )
-		load_error(err,"Original Attacker");
+	// Get server addresses, really victim 
+	if ( (err = load_address(input, sip, shw, &sad, &sha)) < 0 )
+		load_error(err,"Server");
 
-	// Get replay victim, ip, mac and then add original victim port
-	if ( (err = load_address(input, rvip, rvmc, vpt, &revi_ip, &revi_mac,0)) < 0 )
-		load_error(err,"Replay Victim");
-
-	// Get replay attacker, ip, mac and then add original attacker port
-	if ( (err = load_address(input, ratip, ratmac, apt, &reat_ip, &reat_mac,0)) < 0 )
-		load_error(err,"Replay Attacker");
-
-	// Get the interface
 	if ( fgets(iface, sizeof(iface), input) == NULL ) {
 		fprintf(stderr, "Interface too large\n");
 		exit(-1);
 	}
 	rmnl(iface);
 
-	// Get the timing
-	if ( fgets(timing, sizeof(timing), input) == NULL ) {
-		fprintf(stderr, "Timing in correct\n");
-		exit(-1);
-	}
-	rmnl(timing);
+/*
+	// Gets the victim IP, MAC, PORT 
+	fgets(p->vicip, 32, input);
+	rmnl(p->vicip);
+
+	fgets(p->vicmc, 32, input);
+	rmnl(p->vicmc);
+
+	fgets(p->vicpt, 32, input);
+	rmnl(p->vicpt);
+
+	// Gets the attacker IP, MAC, PORT 
+	fgets(p->attip, 32, input);
+	rmnl(p->attip);
+
+	fgets(p->attmc, 32, input);
+	rmnl(p->attmc);
+
+	fgets(p->attpt, 32, input);
+	rmnl(p->attpt);	
+
+	// Gets the Replay victim IP, MAC 
+	fgets(p->repvicip, 32, input);
+	rmnl(p->repvicip);
+
+	fgets(p->repvicmc, 32, input);
+	rmnl(p->repvicmc);
+
+	// Gets the Replay attacker IP, MAC 
+	fgets(p->repattip, 32, input);
+	rmnl(p->repattip);
+
+	fgets(p->repattmc, 32, input);
+	rmnl(p->repattmc);
+
+
+	// Gets the interface 
+	fgets(p->interface, 32, input);
+	rmnl(p->interface);
+
+	// Gets the timing 
+	fgets(p->timing, 32, input);
+	rmnl(p->timing);
+*/
 	fclose(input);
+	return p;
 }
 
 
@@ -636,4 +579,85 @@ void layer2 (struct eth_hdr *ethhead, int size) {
 	layer3(((char *)ethhead)+14,ntohs((*ethhead).eth_type));
 }
 
+
+int main (int argc, char *argv[]) {
+	//struct pcap_file_header fheader;
+	struct my_pkthdr pheader;
+	struct contents *z;
+	char pktbuff[20000];
+	int fd, bytes, i, b;
+	long long sstart = 0, ustart = 0, timesec = 0, timeusec = 0;
+
+	z = malloc(sizeof(struct contents));
+
+	if(argc !=3){
+		fprintf(stderr, "USAGE: ./executable [log file] [config file]\n");
+		return(-1);
+	}
+
+	if((fd = open(argv[1], O_RDONLY)) == -1){
+		fprintf(stderr, "ERROR: on fd = open(argv[1], O_RDONLY)\n");
+		return(-1);
+	}
+
+	if((bytes = read(fd, &pheader, 24)) !=24){
+		fprintf(stderr, "ERROR: on bytes = read()\n");
+		return(-1);
+	}
+	
+	
+	printf("TCP Dump analysis by Alex Manelis\n");
+	fprintf(stdout, "*********************************\n");
+
+        readcfg(argv[2]);
+	//z = readcfg1(argv[2]);	
+	fprintf(stdout, "Configuration file opened properly\n");
+	
+	open_devices();
+	fprintf(stdout, "Devices properly opened\n");
+	
+	setfilter();
+	fprintf(stdout, "Filters have been compiled\n");
+
+	struct eth_hdr *ethin;
+	struct pcap_pkthdr h;
+	
+	ethin = malloc(sizeof(struct eth_hdr));
+
+	i = 0;
+	while((bytes = read(fd, &pheader, 16)) == 16){
+		if(i == 0){
+			ustart = pheader.ts.tv_usec;
+			sstart = pheader.ts.tv_sec;
+		} else {
+			timeusec = pheader.ts.tv_usec-ustart;
+			timesec = pheader.ts.tv_sec-sstart;
+			if (timeusec < 0){
+				timeusec += 1000000;
+				timesec--;
+			}
+		}
+
+
+		printf("\nPacket %d\n%05lld.%06lld\nCaptured Packet Length = %d\n",i,timesec,timeusec,pheader.caplen);
+		printf("Actual Packet Length = %d\n", pheader.len);
+
+		if((bytes = read(fd, &pktbuff, pheader.caplen)) !=pheader.caplen){
+			fprintf(stdout, "End of file or error on packet read\n");
+			fprintf(stdout, "%d\n", pheader.caplen);
+			return(-1);
+		}
+		
+		retrans(&pheader, pktbuff);
+					
+		layer2((struct eth_hdr *) &pktbuff, bytes);
+		i++;
+        
+		b = 0;
+	        b = pcap_next_ex(p, &h, (const u_char **)&ethin);
+		fprintf(stdout, "\tPcap_next_ex: %d\n", b);
+	}
+
+	return(0);
+}
 

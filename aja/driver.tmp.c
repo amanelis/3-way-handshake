@@ -1,61 +1,35 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
+#include"driver.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/fcntl.h>
-#include <sys/time.h>
+extern char *cfile;
 
-#include <dnet.h>
-#include <pcap.h>
+extern struct addr ad;
+extern struct addr mad, mha;        		// my ip, mac
+extern struct addr vad, vha, vprt;        	// victim ip, mac
+extern struct addr aad, aha, aprt;        	// attacker ip, mac
+extern struct addr revi_ip, revi_mac;		// replay victim ip, mac
+extern struct addr reat_ip, reat_mac;		// replay attacker ip, mac
 
-struct timev {
-	unsigned int tv_sec;
-	unsigned int tv_usec;
-};
+extern char mip[32], mhw[32];       		// my ip, mac
+extern char vip[32], vhw[32], vpt[32];       	// victim ip, mac
+extern char aip[32], ahw[32], apt[32];       	// attacker ip, mac
+extern char rvip[32], rvmc[32];		// replay victim ip, mac
+extern char ratip[32], ratmac[32];		// replay attacker ip, mac
 
-struct my_pkthdr {
-	struct timev ts;
-	int caplen;
-	int len;
-};
+extern char iface[32];
+extern char timing[32];
+extern char buf[2048];
+extern char ebuf[2048];
 
-
-#define CMD "tcp and dst host %s and ( src host %s or src host %s )"
-
-char *cfile;
-
-struct addr ad;
-struct addr mad, mha;        		// my ip, mac
-struct addr vad, vha, vprt;        	// victim ip, mac
-struct addr aad, aha, aprt;        	// attacker ip, mac
-struct addr revi_ip, revi_mac;		// replay victim ip, mac
-struct addr reat_ip, reat_mac;		// replay attacker ip, mac
-
-char mip[32], mhw[32];       		// my ip, mac
-char vip[32], vhw[32], vpt[32];       	// victim ip, mac
-char aip[32], ahw[32], apt[32];       	// attacker ip, mac
-char rvip[32], rvmc[32];		// replay victim ip, mac
-char ratip[32], ratmac[32];		// replay attacker ip, mac
-
-char iface[32];
-char timing[32];
-char buf[2048];
-char ebuf[2048];
-
-FILE *fp;
-int err;
-int swit;
-intf_t *i;
-eth_t *e;
-pcap_t *p;
-struct intf_entry ie;
-struct bpf_program fcode;
-uint32_t localnet, netmask;
-pcap_t *packetfile;
+extern FILE *fp;
+extern int err;
+extern int swit;
+extern intf_t *i;
+extern eth_t *e;
+extern pcap_t *p;
+extern struct intf_entry ie;
+extern struct bpf_program fcode;
+extern uint32_t localnet, netmask;
+extern pcap_t *packetfile;
 
 //  This is a simple implementation of a proxy machine.  Effectively
 //  this program makes the machine that it is running on a man-in-the-middle
@@ -154,7 +128,7 @@ int main (int argc, char *argv[]) {
 	}
 	
 	
-	fprintf(stdout, "**********************START************************\n");
+	fprintf(stdout, "*********************************\n");
 
 	readcfg1(argv[2]);	
 	fprintf(stdout, "Configuration file opened properly\n");
@@ -169,7 +143,6 @@ int main (int argc, char *argv[]) {
 	struct pcap_pkthdr h;
 	
 	ethin = malloc(sizeof(struct eth_hdr));
-
 
 	i = 0;
 	while((bytes = read(fd, &pheader, 16)) == 16){
@@ -202,9 +175,8 @@ int main (int argc, char *argv[]) {
         
 		b = 0;
 	        b = pcap_next_ex(p, &h, (const u_char **)&ethin);
-		fprintf(stdout, "\tPCAP Read: %d\n", b);
+		fprintf(stdout, "\tPcap_next_ex: %d\n", b);
 	}
-	sleep(1);
 
 	return(0);
 }
@@ -212,33 +184,19 @@ int main (int argc, char *argv[]) {
 void retrans(struct my_pkthdr *h, u_char *pack ) {
   struct eth_hdr *ethhdr;
   struct ip_hdr *iphdr;
+  struct tcp_hdr *tcphdr;
   struct addr srcad, srcha;
   char sip[32],smac[32];
   int n;
 
   ethhdr = (struct eth_hdr *)pack;
-  iphdr = (struct ip_hdr *)(pack + ETH_HDR_LEN);
-
-/*
-DELETE ME WHEN FINISHED
-struct addr ad;
-struct addr mad, mha;        		// my ip, mac
-struct addr vad, vha, vprt;        	// victim ip, mac
-struct addr aad, aha, aprt;        	// attacker ip, mac
-struct addr revi_ip, revi_mac;		// replay victim ip, mac
-struct addr reat_ip, reat_mac;		// replay attacker ip, mac
-
-char mip[32], mhw[32];       		// my ip, mac
-char vip[32], vhw[32], vpt[32];       	// victim ip, mac
-char aip[32], ahw[32], apt[32];       	// attacker ip, mac
-char rvip[32], rvmc[32];		// replay victim ip, mac
-char ratip[32], ratmac[32];		// replay attacker ip, mac*/
-
+  iphdr = (struct ip_hdr *)(pack+ETH_HDR_LEN);
+  tcphdr= (struct tcp_hdr *)(pack+ETH_HDR_LEN+TCP_HDR_LEN);
 
   // Get source addresses from packet (mac and ip)
   addr_pack(&srcha,ADDR_TYPE_ETH,ETH_ADDR_BITS,&(ethhdr->eth_src),ETH_ADDR_LEN);
   addr_pack(&srcad,ADDR_TYPE_IP,IP_ADDR_BITS,&(iphdr->ip_src),IP_ADDR_LEN);
-  if((strcmp(addr_ntoa(&srcha),vhw)==0)){
+  /*if((strcmp(addr_ntoa(&srcha),vhw)==0)){
 	// Replace source address with my address and destination address
 	memcpy( &ethhdr->eth_src, &revi_mac.addr_eth, ETH_ADDR_LEN);
 	memcpy( &iphdr->ip_src, &revi_ip.addr_ip, IP_ADDR_LEN);
@@ -261,8 +219,7 @@ char ratip[32], ratmac[32];		// replay attacker ip, mac*/
 	} else {
 		fprintf(stdout, "Packet Transmission Successfull %d %d\n", n, h->len);
 	}
-  }
-
+  }*/
   if((strcmp(addr_ntoa(&srcha),ahw)==0)){
 	// Replace source address with my address and destination address
 	memcpy( &ethhdr->eth_src, &reat_mac.addr_eth, ETH_ADDR_LEN);
@@ -276,11 +233,14 @@ char ratip[32], ratmac[32];		// replay attacker ip, mac*/
 		memcpy( &ethhdr->eth_dst, &reat_mac.addr_eth, ETH_ADDR_LEN);
 		memcpy( &iphdr->ip_dst, &reat_ip.addr_ip, IP_ADDR_LEN);
 	}
-
+	if(modify_tcp_header(&tcphdr,0,0,0,0,0,0,0,0,8)<0){
+		return;
+	}
 	// Compute both ip and tcp checksums
 	ip_checksum((void *)iphdr, ntohs(iphdr->ip_len));
 		// Send packet
-		n = eth_send(e,pack,h->len);
+	n = eth_send(e,pack,h->len);
+	//n=ip_send(e,pack,h->len);
 	if ( n != h->len ) { 
 		fprintf(stderr,"Partial packet transmission %d/%d\n",n,h->len);
 	} else {
@@ -289,29 +249,33 @@ char ratip[32], ratmac[32];		// replay attacker ip, mac*/
    }
 }
 
+int modify_tcp_header(struct tcp_hdr **tcphdr,uint16_t sport, uint16_t dport, uint16_t seq,uint16_t ack,uint8_t flags,uint16_t win,uint16_t sum,uint16_t urp, uint8_t options){
+  //check options here
+  struct tcp_hdr *temphdr;
+  temphdr=*tcphdr;
+  switch(options){
+    case 0: { temphdr->sport=sport;}
+    case 1: { temphdr->sport=sport;}
+    case 2: { temphdr->sport=sport;}
+    case 3: { temphdr->sport=sport;}
+    case 4: { temphdr->sport=sport;}
+    case 5: { temphdr->sport=sport;}
+    case 6: { temphdr->sport=sport;}
+    case 7: { temphdr->sport=sport;}
+    case 8: { temphdr->sport=sport;}
+    default: { temphdr->sport=sport;}
+  }
+}
 // Set the bpf filter to only accept tcp packets from the clients
 // to this machine.
 void setfilter() {
   char cmd[96];
-/*if ( pcap_lookupnet(iface, &localnet, &netmask, ebuf) < 0 ) {
-    fprintf(stderr,"pcap_lookupnet: %s\n", ebuf);
-    exit(-1);
-  }
-  snprintf(cmd, sizeof(cmd), CMD, rvip,mip, ratip);
-  printf("Filter:%s\n",cmd);
-  if ( pcap_compile(p, &fcode, cmd, 0, netmask) < 0 ) {
-    fprintf(stderr,"pcap_compile: %s\n", pcap_geterr(p));
-    exit(-1);
-  }
-  if ( pcap_setfilter(p, &fcode) < 0 ) {
-    fprintf(stderr,"pcap_setfilter: %s\n", pcap_geterr(p));
-    exit(-1);
-  }*/
   char *filter;
   if((filter=malloc(sizeof(char)*(32*6)))==NULL){
     return;
   }
   sprintf(filter, "%s, %s, %s, %s, %s, %s", ahw,vhw,aip,vip,apt,vpt);  
+  printf("Filter:%s\n",filter);
   pcap_compile(p,&fp,filter,0,0);
   pcap_setfilter(p,&fp);
 }
@@ -371,7 +335,6 @@ void open_devices(void) {
       exit(-1);
     }
 }
-
 void usage(void) {
     fprintf(stderr, "Usage: proxy <configuration file>\n");
     fprintf(stderr, "         configuration file format\n");
@@ -429,7 +392,8 @@ void load_error(int e, char *mach) {
 
 void readcfg1(char *filename) {
 	FILE *input;
-	
+	struct contents *p;
+	p = malloc(sizeof(struct contents));
 	if((input = fopen(filename, "r")) == NULL){
 		fprintf(stderr, "ERROR: fopen()\n");
 		exit(-1);
@@ -465,6 +429,7 @@ void readcfg1(char *filename) {
 	}
 	rmnl(timing);
 	fclose(input);
+	return;
 }
 
 
@@ -480,6 +445,7 @@ void layer4 (char *layer4p, uint8_t type) {
 			printf("	Dst Port = %u\n", ntohs(tcph->th_dport));
 			printf("	Seq = %u\n", ntohl(tcph->th_seq));
 			printf("	Ack = %u\n", ntohl(tcph->th_ack));
+//			printf("	Syn = %u\n", ntohl(tcph->th_syn));
 			break;
 		case IP_PROTO_UDP:
 			udph = (struct udp_hdr *)layer4p;
@@ -635,5 +601,4 @@ void layer2 (struct eth_hdr *ethhead, int size) {
 
 	layer3(((char *)ethhead)+14,ntohs((*ethhead).eth_type));
 }
-
 
