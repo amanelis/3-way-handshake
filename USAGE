@@ -1,4 +1,6 @@
-./driver logs/syn.64.log logs/cfg.alex
+Running the next command, will read in packets and send data out to network:
+./old logs/syn.64.log logs/cfg.alex
+./tmpdriver logs/syn.64.log logs/cfg.syn
 
 ip.addr eq 192.168.2.27 and !ssh
 ip.addr eq 192.168.5.7 and !ssh
